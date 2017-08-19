@@ -1,2 +1,3 @@
 # ec-datapluginloader
-Loader that initialized all widgets and dependencies on a page
+
+Loader that initialized all widgets and loads dependencies on a page

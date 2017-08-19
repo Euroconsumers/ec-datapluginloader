@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+
+  <title>EC DataPluginAoader</title>
+  <meta name="description" content="The HTML5 Herald">
+  <meta name="author" content="SitePoint">
+
+  <link rel="stylesheet" href="https://cdn.euroconsumers.org/vendor/jquery/jquery-ui/1.12.0/jquery-ui.min.css" />
+  <link rel="stylesheet" href="https://cdn.euroconsumers.org/vendor/jquery/jquery-ui/1.12.0/jquery-ui.theme.min.css" />
+
+  <link rel="stylesheet" href="ec-datapluginloader.css">
+
+</head>
+<body style="margin:1em">
+
+    <div id='content'></div>
+
+    <script src="https://cdn.euroconsumers.org/vendor/jquery/jquery/2.1.4/jquery-2.1.4.min.js"></script>
+    <script src="https://cdn.euroconsumers.org/vendor/jquery/jquery-ui/1.12.0/jquery-ui.min.js"></script>
+
+    <script src="ec-datapluginloader.js"></script>
+
+<script>
+    $(document).ready(function () {
+        function startInitialisation(){
+            $('body').initialiseWidgets({
+                baseUrl: 'http://localhost:8080', // TODO: it seems that this initializer adds some sub-folders, so hardcoded widget and dependency scripts above                ext: '.min.js',
+                src: 'dist' // unfortunatelly this only chances middle subfolder 
+            });
+        }
+        
+        $('#content').load('http://localhost:8080/ec-datapluginloader.html', function( response, status, xhr ) {
+            if ( status == "error" ) console.warn("ec-datapluginloader.html: " + xhr.status + " " + xhr.statusText);
+            
+            //  TODO: here we will need to start using this datapluginloader instead !!
+            if(!$.fn.initialiseWidgets){
+                var script = document.createElement('script');
+                script.type = 'text/javascript';
+                script.src = 'https://cdn.euroconsumers.org/vendor/euroconsumers/ec-widgets/dist/ec-widgets.min.js';
+                script.async = false;
+                document.body.appendChild(script);
+                script.onload = function () {
+                    startInitialisation();
+                };
+            } else {
+                startInitialisation();
+            }
+        });
+    });
+</script>
+
+
+
+</body>
+
+</html>
