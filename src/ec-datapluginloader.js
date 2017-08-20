@@ -16,7 +16,7 @@
         console.log(filteredDataPlugins);
         console.log(sortedDataPlugins);
 
-        //load non-existing
+        //load non-existing, warning currently loading all (TODO: fix ByExistence method)
         let getDependencyPromises = [];
         for (const widgetName in sortedDataPlugins.nonexistent) {
             console.log(widgetName);
@@ -36,13 +36,14 @@
             }
             Promise.all(loadDependencyPromises).then(() => {
                 console.log('Dependencies loaded.');
-                let appendScriptPromises = [];
+                let appendPromises = [];
                 for (const widgetName in sortedDataPlugins.nonexistent) {
                     let resolver = resolveWidget(widgetName);
-                    appendScriptPromises.push(appendScript(resolver.scriptUrl));
+                    appendPromises.push(appendStyle(resolver.styleUrl));
+                    appendPromises.push(appendScript(resolver.scriptUrl));
                 }                    
-                Promise.all(appendScriptPromises).then(function () {
-                    console.log('Script loading finished.');        
+                Promise.all(appendPromises).then(function () {
+                    console.log('Style and script loading finished.');        
                     
                     //load settings and initialize dataplugins
                     for (const widgetName in filteredDataPlugins)
@@ -78,7 +79,7 @@
 
     const resolveWidget = (widgetName) => {
         let resolved = {};
-        
+
         resolved.widgetFullname = 'ec-' + widgetName;
         resolved.rootUrl = 'https://cdn.euroconsumers.org/vendor/euroconsumers/';
         
