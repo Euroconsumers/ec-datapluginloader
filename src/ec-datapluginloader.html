@@ -2,8 +2,34 @@
 
   <p>This script dynamically loads any widgets and it's dependencies</p>
   
-  <h2>Example</h2>
+  <h2>Examples</h2>
   <div data-plugin="showcode">
     <p>It should load the showcode plugin and it's dependencies, both vendor js and custom css.</p>
   </div>
   
+  <div data-plugin="showcode">
+      <p>It should also load the weakpasswordindicator and it's settings.</p>
+      <input 
+      id="pvforloader" 
+      type="password"
+      data-plugin="weakpasswordindicator"
+      data-plugin-settings="#pvforloader-settings"
+      placeholder="Password" />
+    <script id="pvforloader-settings" type="application/json">
+        {
+          "showSuggestions": true,
+          "showWarning": true,
+          "showWarning": true,
+          "showStrength": true,
+          "showScore": true,
+          "strengthMap": {
+            "0": "So bad you can't imagine",
+            "1": "Still very bad",
+            "2": "Rather weak",
+            "3": "Nice one password you have!",
+            "4": "Excellent password!"
+          }
+        }
+    </script>  
+  </div>
+    
