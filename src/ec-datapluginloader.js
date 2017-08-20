@@ -17,40 +17,82 @@
         console.log(sortedDataPlugins);
 
         //load non-existing
-        var appendScriptPromises = [];
-        for (const prop in sortedDataPlugins.nonexistent) {
-            console.log(prop);
-            //console.log(sortedDataPlugins.nonexistent[prop][0]);
-
-            //resolve urls
-            let widgetFullname = 'ec-' + prop;
-            let rootUrl = 'https://cdn.euroconsumers.org/vendor/euroconsumers/';
-            let widgetUrl = rootUrl + widgetFullname + '/0.0.1/';
-            let dependenciesUrl = widgetUrl + 'dependencies.json';
-            
-            //load dependencies
-            getUrl(dependenciesUrl).then(function (dependencies) {
-                console.log(dependencies);
-                loadDependencies(dependencies).then(() => {
-                    console.log('Dependency loaded.');
-                })
-            });
-
-            appendScriptPromises.push(appendScript(widgetUrl + widgetFullname + '.min.js'));
+        let getDependencyPromises = [];
+        for (const widgetName in sortedDataPlugins.nonexistent) {
+            console.log(widgetName);
+            //console.log(sortedDataPlugins.nonexistent[widgetName][0]);
+            let resolver = resolveWidget(widgetName);
+            getDependencyPromises.push(getUrl(resolver.dependenciesUrl));
         }
 
-        Promise.all(appendScriptPromises).then(function (result) {
-            console.log('Script loading finished.');        
-            console.log(result);
+        // TODO: remove pyramid of doom
+        Promise.all(getDependencyPromises).then((dependenciesArray) => {
+            console.log('Dependencies identified.');
+            let loadDependencyPromises = [];
+            for (const dependencies of dependenciesArray)
+            {
+                console.log(dependencies);
+                loadDependencyPromises.push(loadDependencies(dependencies));
+            }
+            Promise.all(loadDependencyPromises).then(() => {
+                console.log('Dependencies loaded.');
+                let appendScriptPromises = [];
+                for (const widgetName in sortedDataPlugins.nonexistent) {
+                    let resolver = resolveWidget(widgetName);
+                    appendScriptPromises.push(appendScript(resolver.scriptUrl));
+                }                    
+                Promise.all(appendScriptPromises).then(function () {
+                    console.log('Script loading finished.');        
+                    
+                    //load settings and initialize dataplugins
+                    for (const widgetName in filteredDataPlugins)
+                    {
+                        console.log(widgetName);
+                        for (const widgetElement of filteredDataPlugins[widgetName])
+                        {
+                            console.log(widgetElement);
+                            let settings = {};
+                            let $widgetElement = $(widgetElement);
+                            let widgetSettingsElement = $widgetElement.data('plugin-settings');
+                            if (widgetSettingsElement) {
+                               let widgetSettings = $(widgetSettingsElement).text();
+                               settings = JSON.parse(widgetSettings);
+                               console.log(settings);
+                               $widgetElement[widgetName](settings);
+                            } else {
+                                $widgetElement[widgetName]();
+                            }
+                        }
+                    }
+                    console.log('DataPlugins initialized.');  
 
-            //TODO: set all settings
-
-        }).catch((err) => {
-            console.error('Dynamic script loading failed.');
-            console.log(err);
+                }).catch((err) => {
+                    //TODO: make sure other promises are also caught
+                    console.error('Dynamic script loading failed.');
+                    console.log(err);
+                });
+            });                
         });
 
     }        
+
+    const resolveWidget = (widgetName) => {
+        let resolved = {};
+        
+        resolved.widgetFullname = 'ec-' + widgetName;
+        resolved.rootUrl = 'https://cdn.euroconsumers.org/vendor/euroconsumers/';
+        
+        //TODO: handle version madness
+        resolved.version = '/0.0.1/';
+        if (widgetName == 'weakpasswordindicator') resolved.version = '/0.0.3/';
+
+        resolved.widgetUrl = resolved.rootUrl + resolved.widgetFullname + resolved.version; 
+        resolved.styleUrl = resolved.widgetUrl + resolved.widgetFullname + '.min.css';
+        resolved.scriptUrl = resolved.widgetUrl + resolved.widgetFullname + '.min.js';
+        resolved.dependenciesUrl = resolved.widgetUrl + 'dependencies.json';
+        
+        return resolved;
+    }
 
     const filterDataPlugins = (dataPlugins) => {
         var filteredDataPlugins = {};
