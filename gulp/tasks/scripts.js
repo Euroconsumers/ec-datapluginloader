@@ -8,10 +8,11 @@ const
     gulpIf          = require('gulp-if'),
     gutil           = require('gulp-util'),
     gulpRename      = require('gulp-rename'),
+    gulpUglify      = require('gulp-uglify'),
+    gulpStripDebug  = require('gulp-strip-debug'),
     path            = require('path'),
     source          = require('vinyl-source-stream'),
     sourcemaps      = require('gulp-sourcemaps'),
-    uglify          = require('gulp-uglify'),
     
     { paths, pkgname }       = require('../config'),
     { ENV_DEV } = require('../envs')
@@ -21,10 +22,9 @@ gulp.task('libs-scripts', () => {
     // Not using buffer and source stream, because don't need
     return gulp.src(paths.libs.src)
     .pipe(babel())
-    .pipe(uglify())
+    .pipe(gulpUglify())
     .pipe(gulp.dest(paths.libs.dst))
 })
-
 
 gulp.task('source-scripts', () => {
     return browserify({
@@ -38,7 +38,8 @@ gulp.task('source-scripts', () => {
     .pipe(source(`${pkgname}.js`))
     .pipe(buffer())
     .pipe(gulpIf(ENV_DEV, sourcemaps.init({ loadMaps: true})))
-    .pipe(uglify().on('error', gutil.log))
+    .pipe(gulpUglify().on('error', gutil.log))
+    .pipe(gulpIf(!ENV_DEV, gulpStripDebug()))
     .pipe(gulpIf(!ENV_DEV, gulpRename((path) => {
           path.extname = `.min` + path.extname;
         })))

@@ -27,7 +27,7 @@
 
         // TODO: remove pyramid of doom
         Promise.all(getDependencyPromises).then((dependenciesArray) => {
-            console.log('Dependencies identified.');
+            console.info('Dependencies identified.');
             let loadDependencyPromises = [];
             for (const dependencies of dependenciesArray)
             {
@@ -35,7 +35,7 @@
                 loadDependencyPromises.push(loadDependencies(dependencies));
             }
             Promise.all(loadDependencyPromises).then(() => {
-                console.log('Dependencies loaded.');
+                console.info('Dependencies loaded.');
                 let appendPromises = [];
                 for (const widgetName in sortedDataPlugins.nonexistent) {
                     let resolver = resolveWidget(widgetName);
@@ -43,7 +43,7 @@
                     appendPromises.push(appendScript(resolver.scriptUrl));
                 }                    
                 Promise.all(appendPromises).then(function () {
-                    console.log('Style and script loading finished.');        
+                    console.info('Style and script loading finished.');        
                     
                     //load settings and initialize dataplugins
                     for (const widgetName in filteredDataPlugins)
@@ -65,7 +65,7 @@
                             }
                         }
                     }
-                    console.log('DataPlugins initialized.');  
+                    console.info('DataPlugins initialized.');  
 
                 }).catch((err) => {
                     //TODO: make sure other promises are also caught
@@ -174,7 +174,7 @@
             script.async = false;
             document.body.appendChild(script);
             script.onload = function () {
-                console.log(url + ' loaded.');
+                console.info(url + ' loaded.');
                 resolve();
             }
             script.onerror = function (err) {
@@ -199,7 +199,7 @@
             link.media = 'all';
             head.appendChild(link);
             link.onload = function () {
-                console.log(url + ' loaded.');
+                console.info(url + ' loaded.');
                 resolve();
             }
             link.onerror = function (err) {

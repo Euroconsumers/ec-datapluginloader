@@ -47,6 +47,7 @@
     "gulp-sass": "^3.1.0",
     "gulp-sequence": "^0.4.6",
     "gulp-sourcemaps": "^2.6.0",
+    "gulp-strip-debug": "^1.1.0",
     "gulp-uglify": "^3.0.0",
     "gulp-util": "^3.0.8",
     "mochawesome": "^2.3.0",
