@@ -32,7 +32,8 @@ gulp.task('source-scripts', () => {
         debug:   true
     })
     .transform(babelify, {
-        presets: ['es2015']
+        presets: ['es2015'],
+        plugins: ['transform-runtime', 'transform-async-to-generator']
     })
     .bundle()
     .pipe(source(`${pkgname}.js`))

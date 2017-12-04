@@ -1,212 +1,236 @@
-
-(function($) {
+(function() {
     'use strict';
-    
-    $.fn.initialiseWidgets = function () {
-        var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
-        var callback = arguments[1];
+    window.initialiseWidgets = async (options) => {
+        let scripts = [[], []], styles = [], promises = [];
 
-        var dataPlugins = document.body.querySelectorAll('[data-plugin]');
-        const filteredDataPlugins = filterDataPlugins(dataPlugins);
-        const sortedDataPlugins = sortDataPluginsByExistence(filteredDataPlugins);
+        const widgets = getWidgets(options);
 
-        dataPlugins.forEach(function(element) {
-            console.log(element)
-        }, this);
-        console.log(filteredDataPlugins);
-        console.log(sortedDataPlugins);
+        //Get all the dependencies and put them together
+        for(let widget in widgets){
 
-        //load non-existing, warning currently loading all (TODO: fix ByExistence method)
-        let getDependencyPromises = [];
-        for (const widgetName in sortedDataPlugins.nonexistent) {
-            console.log(widgetName);
-            //console.log(sortedDataPlugins.nonexistent[widgetName][0]);
-            let resolver = resolveWidget(widgetName);
-            getDependencyPromises.push(getUrl(resolver.dependenciesUrl));
+            const dependencies =  await getDependencies(widgets[widget].urls.dependencies);
+
+            scripts[1].push(widgets[widget].urls.script);
+
+            //avoid duplicates in script
+            scripts[0] = scripts[0].concat(dependencies.js.filter(function(item){
+                return scripts[0].indexOf(item) < 0;
+            }));
+
+            //avoid duplicates in styles
+            styles = styles.concat(dependencies.css.filter(function(item){
+                return styles.indexOf(item) < 0;
+            }));
         }
 
-        // TODO: remove pyramid of doom
-        Promise.all(getDependencyPromises).then((dependenciesArray) => {
-            console.info('Dependencies identified.');
-            let loadDependencyPromises = [];
-            for (const dependencies of dependenciesArray)
-            {
-                console.log(dependencies);
-                loadDependencyPromises.push(loadDependencies(dependencies));
+        // Load all scripts and styles
+        promises.push(loadScripts(scripts));
+        promises.push(loadStyles(styles));
+        await Promise.all(promises)
+
+        //Initialise all the widets
+        for(let widget in widgets){
+            for(let element of widgets[widget].elements){
+
+                let $element = $(element);
+
+                //Check if the widget does have settings or not. And use them if apply.
+                let widgetSettingsElement = $element.data('plugin-settings')||$element.data('widget-settings');
+                if (widgetSettingsElement) {
+                    let settings = JSON.parse($(widgetSettingsElement).text());
+                   $element[widget](settings);
+                } else {
+                    $element[widget]();
+                }
             }
-            Promise.all(loadDependencyPromises).then(() => {
-                console.info('Dependencies loaded.');
-                let appendPromises = [];
-                for (const widgetName in sortedDataPlugins.nonexistent) {
-                    let resolver = resolveWidget(widgetName);
-                    appendPromises.push(appendStyle(resolver.styleUrl));
-                    appendPromises.push(appendScript(resolver.scriptUrl));
-                }                    
-                Promise.all(appendPromises).then(function () {
-                    console.info('Style and script loading finished.');        
-                    
-                    //load settings and initialize dataplugins
-                    for (const widgetName in filteredDataPlugins)
-                    {
-                        console.log(widgetName);
-                        for (const widgetElement of filteredDataPlugins[widgetName])
-                        {
-                            console.log(widgetElement);
-                            let settings = {};
-                            let $widgetElement = $(widgetElement);
-                            let widgetSettingsElement = $widgetElement.data('plugin-settings');
-                            if (widgetSettingsElement) {
-                               let widgetSettings = $(widgetSettingsElement).text();
-                               settings = JSON.parse(widgetSettings);
-                               console.log(settings);
-                               $widgetElement[widgetName](settings);
-                            } else {
-                                $widgetElement[widgetName]();
+        }      
+    } 
+
+    /**
+     * Get the list of data-plugin used on the page.
+     * 
+     * @param {object} {cdnUrl} the cdn Url passed in the options of the initialiseWidgets function
+     * @returns {Array} an array containing the list of all widgets used on the page.
+     */
+    const getWidgets = ({cdnUrl}) => {
+        /**
+         * REMAINING TODO'S :
+         * - Handle version madness !
+         */
+        let dataPlugins = document.body.querySelectorAll('[data-plugin],[data-widget]'), widgets = {};
+
+        for(let item of dataPlugins){
+
+            //if the widget is already initialized, skip it
+            if (item.classList.contains('has-plugin')) continue;
+
+            // Manipulate a bit the name to reformat it correctly. 
+            // The behavior is that if a plugin contains an uppercase, this uppercase is replace by a dash and the letter in lowercase.
+            // The manipulation here is done to get back the correct file names and path
+
+            let name = item.getAttribute('data-plugin') || item.getAttribute('data-widget'),
+            nameParts = name.split('-');
+            nameParts.forEach((entry,index,array) => {
+                if(index !== 0)
+                {
+                    array[index] = entry.charAt(0).toUpperCase() + entry.slice(1);
+                }
+            });
+            name = nameParts.join('');
+
+
+            /********************************************************************************************
+             * This code is a temporary total bullshit in order to handle difference between widgets    *
+             * (some have a version. other not)                                                         *
+             * It should be removed ASAP !!!                                                            *
+             ********************************************************************************************/
+            
+            let version = 'dist';
+            if(name === 'weakpasswordindicator') version = '0.0.3';
+            if(name === 'showcode') version = '0.0.1';
+
+            /****************
+             * End bullshit *
+             ****************/
+
+            if(widgets.hasOwnProperty(name)){
+                widgets[name].elements.push(item);
+            } else {
+                widgets[name] = {};
+                widgets[name].elements = [item];
+
+                // build the differents urls from the widget
+                cdnUrl = cdnUrl || 'https://cdn.euroconsumers.org';
+                let rootUrl =`${cdnUrl}/vendor/euroconsumers/ec-${name}/${version}/`;
+                widgets[name].urls ={
+                    script : `${rootUrl}ec-${name}.min.js`,
+                    style: `${rootUrl}ec-${name}.min.css`,
+                    dependencies:`${rootUrl}dependencies.json`
+                }
+                
+            }
+        }
+        return widgets;
+    } 
+    
+    /**
+     * Get the dependecies of a widget.
+     * @param {string} dependenciesUrl - url to the dependency JSON file. 
+     * @return {object} An object containing both Css & JS dependencies (as arrays) of a specific widget.
+     */
+    const getDependencies = async (dependenciesUrl) => {
+        /**
+         * REMAINING TODO'S
+         * - Remove cdn hostname from all the urls and replace it with the provided (or default one)
+         * - Test new structure.
+         * - Check version
+         */
+        let dependencies = {
+            js : [],
+            css : []
+        };
+
+        const response = await fetch(dependenciesUrl);
+        if(response.ok){ //TODO Check if 'ok' is reliable
+            const json = await response.json();
+            for(let type in json){
+                if(json.hasOwnProperty(type))
+                {
+                    if(Array.isArray(json[type])){
+                        dependencies[type] = json[type];
+                    }
+                    else {
+                        /********************************************************************************
+                        * This code only exist to support the old structure.                            *
+                        * Once all the widgets are migrated to the new structure it can be removed.     *
+                        * Replace it with an error message                                              *
+                        *********************************************************************************/
+                        for (let dependency in json[type]){
+
+                            if(typeof json[type][dependency] !== 'string')
+                            {
+                                console.error(`Formatting issue in dependencies in ${dependenciesUrl} : \n ${dependency} is not in a valid format for ${type}. it's a(n) ${typeof json[type][dependency]} but it should be a string`);
+                                continue;
                             }
+
+                            dependencies[type].push(json[type][dependency]);
                         }
                     }
-                    console.info('DataPlugins initialized.');  
-
-                }).catch((err) => {
-                    //TODO: make sure other promises are also caught
-                    console.error('Dynamic script loading failed.');
-                    console.log(err);
-                });
-            });                
-        });
-
-    }        
-
-    const resolveWidget = (widgetName) => {
-        let resolved = {};
-
-        resolved.widgetFullname = 'ec-' + widgetName;
-        resolved.rootUrl = 'https://cdn.euroconsumers.org/vendor/euroconsumers/';
-        
-        //TODO: handle version madness
-        resolved.version = '/0.0.1/';
-        if (widgetName == 'weakpasswordindicator') resolved.version = '/0.0.3/';
-
-        resolved.widgetUrl = resolved.rootUrl + resolved.widgetFullname + resolved.version; 
-        resolved.styleUrl = resolved.widgetUrl + resolved.widgetFullname + '.min.css';
-        resolved.scriptUrl = resolved.widgetUrl + resolved.widgetFullname + '.min.js';
-        resolved.dependenciesUrl = resolved.widgetUrl + 'dependencies.json';
-        
-        return resolved;
-    }
-
-    const filterDataPlugins = (dataPlugins) => {
-        var filteredDataPlugins = {};
-        
-        for (const item of dataPlugins) {
-          
-          //If an element already has a widget, go to the next one
-          if (item.classList.contains('has-plugin')) continue;
-          
-          var pluginName = item.getAttribute('data-plugin');
-          
-          //Skip legacy plugins
-          //if (pluginName === 'file_upload') continue;
-          //if (pluginName === 'socialShare') continue;
-          
-          //Skip disabled plugins
-          //if (isPluginDisabled(item, pluginName)) continue;
-          
-          if (filteredDataPlugins.hasOwnProperty(pluginName)) {
-            filteredDataPlugins[pluginName].push(item);
-          } else {
-            filteredDataPlugins[pluginName] = [item];
-          }
+                }
+            }
         }
-        
-        return filteredDataPlugins;
+        return dependencies;        
     }
 
-    const sortDataPluginsByExistence = (filteredDataPlugins) => {
-        var result = { existent: {}, nonexistent: {} };
-
-        //TODO: sort out existing, not sure of the format yet
-        result.nonexistent = filteredDataPlugins;
-
-        return result;
+    /**
+     * Load all the scripts passed in argument group by group (one array at a time).
+     * @param {array} scripts - the lists of scripts in groups. Each script inside a group can be loaded independently that the other scripts of the same group.
+     */
+    const loadScripts = async (scripts) => {
+        for(let group of scripts){
+            let promises = [];
+            for (let script of group){
+                promises.push(getScript(script));
+            }
+            await Promise.all(promises);
+        }
     }
 
-    const loadDependencies = (dependencies) => {
-        return new Promise(function (resolve, reject) {
-            //load css
-            let cssPromises = [];
-            for (const dependencyName in dependencies.css) {
-                //console.log(dependencyName);
-                //console.log(dependencies.css[dependencyName]);
-                cssPromises.push(appendStyle(dependencies.css[dependencyName]));
-            }
-            //load js
-            let jsPromises = [];
-            for (const dependencyName in dependencies.js) {
-                //console.log(dependencyName);
-                //console.log(dependencies.js[dependencyName]);
-                jsPromises.push(appendScript(dependencies.js[dependencyName]));
-            }
-            Promise.all([...cssPromises, ...jsPromises]).then(resolve).catch((err) => { reject(err)});
-        });
-    }
-
-    const getUrl = (url) => {
-        return new Promise(function (resolve, reject) {
-          var xhr = new XMLHttpRequest();
-          xhr.addEventListener('load', function () {
-            if (xhr.status >= 200 && xhr.status < 400) {
-              resolve(JSON.parse(xhr.responseText));
-            } else {
-              reject(xhr.status);
-            }
-          });
-          xhr.open('get', url, true);
-          xhr.send();
-        });
-    };
-
-    const appendScript = (url) => {
+    /**
+     * Load a specific script and add it to the DOM.
+     * @param {string} url - url to a js script file.
+     */
+    const getScript = (url) =>{
         return new Promise((resolve, reject) => {
-            var script = document.createElement('script');
+            let script = document.createElement('script');
             script.type = 'text/javascript';
             script.src = url;
-            script.async = false;
+            script.async = true;
             document.body.appendChild(script);
             script.onload = function () {
-                console.info(url + ' loaded.');
                 resolve();
             }
             script.onerror = function (err) {
-                //console.warn(e);
+                console.warn(e);
                 reject(err);
             }
         })
     }
 
+
+
     /**
-     * Dynamically load stylesheet
-     * Also, see {@link https://stackoverflow.com/questions/574944/how-to-load-up-css-files-using-javascript}
+     * Load all the styles in the list given as argument.
+     * @param {array} styles - the list of styles.
      */
-    const appendStyle = (url) => {
+    const loadStyles = async (styles) => {
+        let promises = [];
+        for (let style of styles){
+            promises.push(getStyle(style));
+        }
+        await Promise.all(promises);
+    }
+
+    /**
+     * Load a specific stylesheet and add it to the DOM.
+     * @param {string} url - url to a css stylesheet.
+     */
+    const getStyle = (url) => {
         return new Promise((resolve, reject) => {
             var head  = document.getElementsByTagName('head')[0];
             var link  = document.createElement('link');
-            //link.id   = cssId; // you could encode the url for this
             link.rel  = 'stylesheet';
             link.type = 'text/css';
             link.href = url;
             link.media = 'all';
             head.appendChild(link);
             link.onload = function () {
-                console.info(url + ' loaded.');
                 resolve();
             }
             link.onerror = function (err) {
-                //console.warn(err);
+                console.warn(err);
                 reject(err);
             }
         })
     }
-
-})(jQuery)
+})()

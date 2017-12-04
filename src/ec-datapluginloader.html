@@ -1,20 +1,21 @@
-<h1>Data-Plugin Loader</h1>
+<h1>Data-widget Loader</h1>
 
 <p>This script dynamically loads any widgets and it's dependencies</p>
   
 <h2>Examples</h2>
 <div data-plugin="showcode">
-    <p>It should load the showcode plugin and it's dependencies, both vendor js and custom css.</p>
+    <p>It should load the showcode widget and it's dependencies, both vendor js and custom css.</p>
+    <p>This one is specifically using a data-plugin attribute to ensure retrocompatibility.</p> 
 </div>
   
-<div data-plugin="showcode">
+<div data-widget="showcode">
   <p>It should also load the weakpasswordindicator and it's settings.</p>
   <p>And it's widgets dependencies like loading-bar. TODO</p>
   <input 
     id="pvforloader" 
     type="password"
-    data-plugin="weakpasswordindicator"
-    data-plugin-settings="#pvforloader-settings"
+    data-widget="weakpasswordindicator"
+    data-widget-settings="#pvforloader-settings"
     placeholder="Password" />
   <script id="pvforloader-settings" type="application/json">
     {
@@ -31,6 +32,41 @@
         "4": "Excellent password!"
       }
     }
-  </script>  
+  </script> 
 </div>
+  <div data-widget="maps" id="map1" style="width:600px;height:600px;"></div>
+
+  <form class="form">
+    <div class="form__item form__item--string">
+        <label class="form__label" for="widget-datepicker-01">
+                Date input
+        </label>
+        <input class="form__field form__field--string form__field--medium" data-widget="date-select" type="text" id="widget-datepicker-01" autocorrect="off" placeholder="dd-mm-yyyy">
+    </div>
+</form>
+<!--Launch modal by link-->
+<a id="lorem-modal-1-a" data-popup-type="inline" href="#lorem-modal-1" data-widget="modal">Launch inline modal from
+  link</a>
+<br>
+<!--Launch modal by button-->
+<button class="btn btn--primary btn--small" id="lorem-modal-1-b" data-popup-type="inline" href="#lorem-modal-1" data-widget="modal">Launch inline modal from button
+</button>
+
+<!--The modal content starts here -->
+<div id="lorem-modal-1" class="mfp-hide">
+<div class="popup__inner white-popup">
+  <h1>Bacon Ipsum</h1>
+  <div class="popup__section spacer-small">
+      <p>Bacon ipsum dolor amet salami pork belly meatball pork turducken filet mignon corned beef shank
+              capicola drumstick hamburger. Swine alcatra rump drumstick landjaeger ham beef. Landjaeger chicken
+              frankfurter turkey tri-tip doner. Rump ball tip tri-tip kielbasa alcatra, salami short loin
+              landjaeger pork chop picanha. Hamburger venison turducken chuck, corned beef turkey pork loin beef
+              jerky beef ribs rump pastrami salami tail. Ham hock short ribs sausage chuck alcatra, flank jerky
+              shoulder bresaola meatloaf doner ground round leberkas venison.</p>
+  </div>
+  <input type="button" class="popup-close btn btn--primary btn--large" value="Close">
+</div>
+</div>
+
+
     

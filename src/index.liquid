@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
 
-  <title>EC DataPluginAoader</title>
+  <title>EC DataPluginLoader</title>
   <meta name="description" content="The HTML5 Herald">
   <meta name="author" content="SitePoint">
 
@@ -25,8 +25,9 @@
 <script>
     $(document).ready(function () {
         function startInitialisation(){
-            $('body').initialiseWidgets({
-                baseUrl: 'http://localhost:8080', // TODO: it seems that this initializer adds some sub-folders, so hardcoded widget and dependency scripts above                ext: '.min.js',
+            initialiseWidgets({
+                baseUrl: 'http://localhost:8080', // TODO: it seems that this initializer adds some sub-folders, so hardcoded widget and dependency scripts above,                
+                ext: '.min.js',
                 src: 'dist' // unfortunatelly this only chances middle subfolder 
             });
         }
@@ -35,7 +36,7 @@
             if ( status == "error" ) console.warn("ec-datapluginloader.html: " + xhr.status + " " + xhr.statusText);
             
             //  TODO: here we will need to start using this datapluginloader instead !!
-            if(!$.fn.initialiseWidgets){
+            if(!initialiseWidgets){
                 var script = document.createElement('script');
                 script.type = 'text/javascript';
                 script.src = 'https://cdn.euroconsumers.org/vendor/euroconsumers/ec-widgets/dist/ec-widgets.min.js';
