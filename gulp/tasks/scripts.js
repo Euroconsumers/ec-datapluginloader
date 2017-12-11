@@ -13,6 +13,7 @@ const
     path            = require('path'),
     source          = require('vinyl-source-stream'),
     sourcemaps      = require('gulp-sourcemaps'),
+    polyfiller = require('gulp-polyfiller'),
     
     { paths, pkgname }       = require('../config'),
     { ENV_DEV } = require('../envs')
@@ -37,6 +38,7 @@ gulp.task('source-scripts', () => {
     })
     .bundle()
     .pipe(source(`${pkgname}.js`))
+    .pipe(polyfiller(['Fetch','Promise']))
     .pipe(buffer())
     .pipe(gulpIf(ENV_DEV, sourcemaps.init({ loadMaps: true})))
     .pipe(gulpUglify().on('error', gutil.log))
