@@ -113,10 +113,6 @@
      * @return {object} An object containing both Css & JS dependencies (as arrays) of a specific widget.
      */
     const getDependencies = async (dependenciesUrl,{cdnUrl}) => {
-        /**
-         * REMAINING TODO's
-         * - Check version
-         */
         let dependencies = {
             js : [],
             css : []
