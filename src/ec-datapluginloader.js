@@ -164,18 +164,26 @@
 
                         if(typeof json[type][dependency] !== 'string')
                         {
-                            console.error(`Formatting issue in dependencies in ${dependenciesUrl} : \n ${dependency} is not in a valid format for ${type}. it's a(n) ${typeof json[type][dependency]} but it should be a string`);
-                            continue;
+                            for(let subdependency in json[type][dependency]){
+                                let parts = json[type][dependency][subdependency].replace(/http(s?):\/\//,'').split('/');
+                                if(parts[0].match(/^(?:https?:\/\/)?.+\.(?:.{2,3})/g)){
+                                    parts.splice(0,1);
+                                    json[type][dependency][subdependency] = `/${parts.join('/')}`;   
+                                }
+                            
+                                dependencies[type].push(`${cdnUrl}${json[type][dependency][subdependency]}`);
+                            }
                         }
-
-                        //Check if the dependency contains a hostname & remove it if it's the case. 
-                        let parts = json[type][dependency].replace(/http(s?):\/\//,'').split('/');
-                        if(parts[0].match(/^(?:https?:\/\/)?.+\.(?:.{2,3})/g)){
-                            parts.splice(0,1);
-                            json[type][dependency] = `/${parts.join('/')}`;   
+                        else{
+                            //Check if the dependency contains a hostname & remove it if it's the case. 
+                            let parts = json[type][dependency].replace(/http(s?):\/\//,'').split('/');
+                            if(parts[0].match(/^(?:https?:\/\/)?.+\.(?:.{2,3})/g)){
+                                parts.splice(0,1);
+                                json[type][dependency] = `/${parts.join('/')}`;   
+                            }
+                        
+                            dependencies[type].push(`${cdnUrl}${json[type][dependency]}`);
                         }
-
-                        dependencies[type].push(`${cdnUrl}${json[type][dependency]}`);
                     }
                 }
             }
