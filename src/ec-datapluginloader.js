@@ -161,13 +161,24 @@
                         if(typeof json[type][dependency] !== 'string')
                         {
                             for(let subdependency in json[type][dependency]){
-                                let parts = json[type][dependency][subdependency].replace(/http(s?):\/\//,'').split('/');
-                                if(parts[0].match(/^(?:https?:\/\/)?.+\.(?:.{2,3})/g)){
-                                    parts.splice(0,1);
-                                    json[type][dependency][subdependency] = `/${parts.join('/')}`;   
+                                if(typeof json[type][dependency][subdependency] !== 'string')
+                                {
+                                    for(let subsubdependency in json[type][dependency][subdependency]){
+                                        let parts = json[type][dependency][subdependency][subsubdependency].replace(/http(s?):\/\//,'').split('/');
+                                        if(parts[0].match(/^(?:https?:\/\/)?.+\.(?:.{2,3})/g)){
+                                            parts.splice(0,1);
+                                            json[type][dependency][subdependency][subsubdependency] = `/${parts.join('/')}`;   
+                                        }
+                                        dependencies[type].push(`${cdnUrl}${json[type][dependency][subdependency][subsubdependency]}`);
+                                    }
+                                }else{
+                                    let parts = json[type][dependency][subdependency].replace(/http(s?):\/\//,'').split('/');
+                                    if(parts[0].match(/^(?:https?:\/\/)?.+\.(?:.{2,3})/g)){
+                                        parts.splice(0,1);
+                                        json[type][dependency][subdependency] = `/${parts.join('/')}`;   
+                                    }
+                                    dependencies[type].push(`${cdnUrl}${json[type][dependency][subdependency]}`);
                                 }
-                            
-                                dependencies[type].push(`${cdnUrl}${json[type][dependency][subdependency]}`);
                             }
                         }
                         else{
@@ -237,7 +248,7 @@
             let script = document.createElement('script');
             script.type = 'text/javascript';
             script.src = url;
-            script.async = true;
+            script.async = false;
             document.body.appendChild(script);
             script.onload = function () {
                 resolve();
