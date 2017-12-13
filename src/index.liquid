@@ -16,43 +16,22 @@
 <body style="margin:1em">
 
     <div id='content'></div>
-
-    <script src="https://cdn.euroconsumers.org/vendor/jquery/jquery/2.1.4/jquery-2.1.4.min.js" ></script>
-    <script src="https://cdn.euroconsumers.org/vendor/jquery/jquery-ui/1.12.0/jquery-ui.min.js" async></script>
     <script src="polyfills.js" async></script>
     <script src="ec-datapluginloader.js" async></script>
+    <script src="https://cdn.euroconsumers.org/vendor/jquery/jquery/2.1.4/jquery-2.1.4.min.js" ></script>
+    <script src="https://cdn.euroconsumers.org/vendor/jquery/jquery-ui/1.12.0/jquery-ui.min.js" async></script>
 
 <script>
-    $(document).ready(function () {
-        function startInitialisation(){
-            initialiseWidgets({
+    $(document).ready(function () {        
+        $('#content').load('http://localhost:8080/ec-datapluginloader.html', function( response, status, xhr ) {
+            if ( status == "error" ) console.warn("ec-datapluginloader.html: " + xhr.status + " " + xhr.statusText);
+             initialiseWidgets({
                 "cdnUrl" : "https://cdn.euroconsumers.org",
                 "widgetVersionUrl":"/widgetVersion.json" 
             });
-        }
-        
-        $('#content').load('http://localhost:8080/ec-datapluginloader.html', function( response, status, xhr ) {
-            if ( status == "error" ) console.warn("ec-datapluginloader.html: " + xhr.status + " " + xhr.statusText);
-            
-            //  TODO: here we will need to start using this datapluginloader instead !!
-            if(!initialiseWidgets){
-                var script = document.createElement('script');
-                script.type = 'text/javascript';
-                script.src = 'https://cdn.euroconsumers.org/vendor/euroconsumers/ec-widgets/dist/ec-widgets.min.js';
-                script.async = false;
-                document.body.appendChild(script);
-                script.onload = function () {
-                    startInitialisation();
-                };
-            } else {
-                startInitialisation();
-            }
         });
     });
 </script>
-
-
-
 </body>
 
 </html>
