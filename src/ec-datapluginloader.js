@@ -9,7 +9,7 @@
 
         options.cdnUrl = options.cdnUrl || 'https://cdn.euroconsumers.org';
 
-        const widgets = getWidgets(options);
+        const widgets = await getWidgets(options);
 
         //Get all the dependencies and put them together
         for(let widget in widgets){
@@ -59,12 +59,14 @@
      * @param {object} {cdnUrl} the cdn Url passed in the options of the initialiseWidgets function
      * @returns {array} an array containing the list of all widgets used on the page.
      */
-    const getWidgets = ({cdnUrl}) => {
+    const getWidgets = async (options) => {
         /**
          * REMAINING 'S :
          * - Handle version madness !
          */
-        let dataPlugins = document.body.querySelectorAll('[data-plugin],[data-widget]'), widgets = {};
+        let dataPlugins = document.body.querySelectorAll('[data-plugin],[data-widget]'),
+        widgets = {},
+        versionList = await getWidgetVersionList(options);
 
         for(let item of dataPlugins){
 
@@ -84,30 +86,16 @@
                 }
             });
             name = nameParts.join('');
+            let version = versionList[name];
 
-
-            /********************************************************************************************
-             * This code is a temporary total bullshit in order to handle difference between widgets    *
-             * (some have a version. other not)                                                         *
-             * It should be removed ASAP !!!                                                            *
-             ********************************************************************************************/
-            
-            let version = 'dist';
-            if(name === 'weakpasswordindicator') version = '0.0.3';
-            if(name === 'showcode') version = '0.0.1';
-
-            /****************
-             * End bullshit *
-             ****************/
-
-            if(widgets.hasOwnProperty(name)){
+            if(widgets.hasOwnProperty(name)){ 
                 widgets[name].elements.push(item);
             } else {
                 widgets[name] = {};
                 widgets[name].elements = [item];
 
                 // build the differents urls from the widget
-                let rootUrl =`${cdnUrl}/vendor/euroconsumers/ec-${name}/${version}/`;
+                let rootUrl =`${options.cdnUrl}/vendor/euroconsumers/ec-${name}/${version}/`;
                 widgets[name].urls ={
                     script : `${rootUrl}ec-${name}.min.js`,
                     style: `${rootUrl}ec-${name}.min.css`,
@@ -153,7 +141,7 @@
                 for(let dependency of json){
 
                     //Check if the dependency contains a hostname & remove it if it's the case. 
-                    let parts = dependency.replace('//','X').split('/');
+                    let parts = dependency.replace(/http(s?):\/\//,'').split('/');
                     if(parts[0].match(/^(?:https?:\/\/)?.+\.(?:.{2,3})/g)){
                         parts.splice(0,1);
                         dependency = `/${parts.join('/')}`;   
@@ -181,7 +169,7 @@
                         }
 
                         //Check if the dependency contains a hostname & remove it if it's the case. 
-                        let parts = json[type][dependency].replace('//','X').split('/');
+                        let parts = json[type][dependency].replace(/http(s?):\/\//,'').split('/');
                         if(parts[0].match(/^(?:https?:\/\/)?.+\.(?:.{2,3})/g)){
                             parts.splice(0,1);
                             json[type][dependency] = `/${parts.join('/')}`;   
@@ -321,8 +309,12 @@
         return path.substring(versionStart+1,versionEnd)
     }
 
+    /**
+     * return the name of the library in the given path. This means the filename without it's extension
+     * @param {string} path 
+     */
     const getFileName = (path) => {
-    //TODO : force min version to all filename. NEED TO BE CHECKED WITH KVG
+        //TODO : force min version to all filename. NEED TO BE CHECKED WITH KVG
         let begin = path.lastIndexOf('/') + 1,
             end = path.lastIndexOf('.');
         if(begin >= end){
@@ -331,6 +323,15 @@
         }
 
         return path.substring(begin,end);
+    }
+
+    const getWidgetVersionList = async ({widgetVersionUrl}) =>  {
+        let response = await fetch(widgetVersionUrl);
+        if(response.ok){
+            return response.json();
+        }
+        console.error(`${widgetVersionUrl} is not a valid url`)
+       return undefined;
     }
 
 })()

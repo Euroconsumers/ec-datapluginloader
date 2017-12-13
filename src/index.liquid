@@ -17,18 +17,17 @@
 
     <div id='content'></div>
 
-    <script src="https://cdn.euroconsumers.org/vendor/jquery/jquery/2.1.4/jquery-2.1.4.min.js"></script>
-    <script src="https://cdn.euroconsumers.org/vendor/jquery/jquery-ui/1.12.0/jquery-ui.min.js"></script>
-    <script src="polyfills.js"></script>
-    <script src="ec-datapluginloader.js"></script>
+    <script src="https://cdn.euroconsumers.org/vendor/jquery/jquery/2.1.4/jquery-2.1.4.min.js" ></script>
+    <script src="https://cdn.euroconsumers.org/vendor/jquery/jquery-ui/1.12.0/jquery-ui.min.js" async></script>
+    <script src="polyfills.js" async></script>
+    <script src="ec-datapluginloader.js" async></script>
 
 <script>
     $(document).ready(function () {
         function startInitialisation(){
             initialiseWidgets({
-                baseUrl: 'http://localhost:8080', // TODO: it seems that this initializer adds some sub-folders, so hardcoded widget and dependency scripts above,                
-                ext: '.min.js',
-                src: 'dist' // unfortunatelly this only chances middle subfolder 
+                "cdnUrl" : "https://cdn.euroconsumers.org",
+                "widgetVersionUrl":"/widgetVersion.json" 
             });
         }
         

@@ -41,8 +41,8 @@ module.exports = {
             dst: dstDir,
             //local: localDir
         },
-        dependencies: {
-            src: path.join(srcDir, 'dependencies.json'),
+        json: {
+            src: path.join(srcDir, '*.json'),
             dst: dstDir,
             //local: localDir
         },

@@ -11,8 +11,8 @@ gulp.task('html', () => {
 })
 
 gulp.task('dependencies', () => {
-    return gulp.src(paths.dependencies.src)
-        .pipe(gulp.dest(paths.dependencies.dst))
+    return gulp.src(paths.json.src)
+        .pipe(gulp.dest(paths.json.dst))
 })
 
 module.exports = gulp.task('static', ['html', 'dependencies'])
