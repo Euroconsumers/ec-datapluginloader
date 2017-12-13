@@ -5,7 +5,7 @@
      * @param {*} options 
      */
     window.initialiseWidgets = async (options) => {
-        let scripts = [[], []], styles = [], promises = [];
+        let scripts = [], styles = [], promises = [];
 
         options.cdnUrl = options.cdnUrl || 'https://cdn.euroconsumers.org';
 
@@ -15,12 +15,12 @@
         for(let widget in widgets){
             const dependencies =  await getDependencies(widgets[widget].urls.dependencies,options);
 
-            scripts[1].push(widgets[widget].urls.script);
-
             //avoid duplicates in script
-            scripts[0] = scripts[0].concat(dependencies.js.filter(function(item){
-                return scripts[0].indexOf(item) < 0;
+            scripts = scripts.concat(dependencies.js.filter(function(item){
+                return scripts.indexOf(item) < 0;
             }));
+
+            scripts.push(widgets[widget].urls.script);
 
             //avoid duplicates in styles
             styles = styles.concat(dependencies.css.filter(function(item){
@@ -230,13 +230,11 @@
      * @param {array} scripts - the lists of scripts in groups. Each script inside a group can be loaded independently that the other scripts of the same group.
      */
     const loadScripts = async (scripts) => {
-        for(let group of scripts){
             let promises = [];
-            for (let script of group){
+            for (let script of scripts){
                 promises.push(getScript(script));
             }
             await Promise.all(promises);
-        }
     }
 
     /**
