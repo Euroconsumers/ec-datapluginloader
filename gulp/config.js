@@ -58,6 +58,9 @@ module.exports = {
             src: path.join(rootDir, 'libs', '**', '*.js'),
             dst: path.join(dstDir, 'libs'),
             //local: path.join(localDir, 'libs')
+        },
+        jsdoc : {
+            src: path.join(rootDir,'jsdoc.json')
         }
     }
 }

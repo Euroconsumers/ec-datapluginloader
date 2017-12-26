@@ -13,7 +13,8 @@ const
     path            = require('path'),
     source          = require('vinyl-source-stream'),
     sourcemaps      = require('gulp-sourcemaps'),
-    polyfiller = require('gulp-polyfiller'),
+    polyfiller      = require('gulp-polyfiller'),
+    jsdoc           = require('gulp-jsdoc3'),
     
     { paths, pkgname }       = require('../config'),
     { ENV_DEV } = require('../envs')
@@ -51,4 +52,10 @@ gulp.task('source-scripts', () => {
     .pipe(gulpIf(ENV_DEV, browserSync.reload({ stream: true })))
 })
 
-module.exports = gulp.task('scripts', ['libs-scripts', 'source-scripts'])
+gulp.task('jsdoc', () =>{
+    let config = require(paths.jsdoc.src);
+    gulp.src(path.join(paths.js.entry),{read: false})
+    .pipe(jsdoc(config));
+})
+
+module.exports = gulp.task('scripts', ['libs-scripts', 'source-scripts','jsdoc'])
