@@ -2,32 +2,28 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-
   <title>ec-dataWidgetLoader</title>
   <meta name="description" content="ec-dataWidgetLoader">
   <meta name="author" content="belux\rds">
-
-  <link rel="stylesheet" href="https://cdn.euroconsumers.org/vendor/jquery/jquery-ui/1.12.0/jquery-ui.min.css" />
-  <link rel="stylesheet" href="https://cdn.euroconsumers.org/vendor/jquery/jquery-ui/1.12.0/jquery-ui.theme.min.css" />
-
-  <link rel="stylesheet" href="ec-datapluginloader.css">
-
 </head>
 <body style="margin:1em">
 
     <div id='content'></div>
     <script src="polyfills.js" ></script>
     <script src="ec-datapluginloader.js"></script>
-    <script src="https://cdn.euroconsumers.org/vendor/jquery/jquery/2.1.4/jquery-2.1.4.min.js" ></script>
-    <script src="https://cdn.euroconsumers.org/vendor/jquery/jquery-ui/1.12.0/jquery-ui.min.js" async></script>
 
 <script>
     $(document).ready(function () {        
         $('#content').load('http://localhost:8080/ec-datapluginloader.html', function( response, status, xhr ) {
             if ( status == "error" ) console.warn("ec-datapluginloader.html: " + xhr.status + " " + xhr.statusText);
-             initialiseWidgets({
+             loadScriptsAndWidgets({
                 "cdnUrl" : "https://cdn.euroconsumers.org",
-                "widgetVersionUrl":"/widgetVersion.json" 
+                "widgetVersionUrl":"/widgetVersion.json",
+                "jQueryUI" : [
+                    "/vendor/jquery/jquery-ui/1.12.0/jquery-ui.min.js",
+                    "/vendor/jquery/jquery-ui/1.12.0/jquery-ui.min.css",
+                    "/vendor/jquery/jquery-ui/1.12.0/jquery-ui.theme.min.css"
+                ] 
             });
         });
     });

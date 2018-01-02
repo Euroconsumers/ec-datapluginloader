@@ -1,125 +1,203 @@
-(function() {
+/**
+ * Euroconsumers Script Loader
+ * @module ec-script-loader
+ * @author Raphaël Desaegher (belux\rds) <rdesaegher@test-achats.be>
+ * @license LGPL-3.0
+ */
+(function (window, document, jQuery) {
+
     'use strict';
+
     /**
-     * 
+     * jQuery script path
+     * @constant
+     * @default {@link https://cdn.euroconsumers.org/vendor/jquery/jquery/2.1.4/jquery-2.1.4.min.js }
+     * @type {string}
+     * @memberof module:ec-script-loader
+     */
+    const jQueryPath = "https://cdn.euroconsumers.org/vendor/jquery/jquery/2.1.4/jquery-2.1.4.min.js";
+
+    let jQueryPromise,
+        cdnUrl,
+        scripts = {},
+        styles = []
+
+    window.loadScriptsAndWidgets = async (options) => {
+        //Check which scripts are already loaded
+        getAlreadyLoadedScripts();
+
+        cdnUrl = options.cdnUrl || 'https://cdn.euroconsumers.org';
+
+        //wait that jQuery is loaded before starting
+        await jQueryPromise;
+
+        //Load and initialize all the widgets.
+        processWidgets(options);
+
+    }
+
+    /**
+     * TODO
      * @param {*} options 
      */
-    window.initialiseWidgets = async (options) => {
-        let scripts = [], styles = [], promises = [];
+    const processWidgets = async (options) => {
+        //Load jQuery UI
+        await Promise.all(loadjQueryUI(options));
 
-        options.cdnUrl = options.cdnUrl || 'https://cdn.euroconsumers.org';
-
+        //Get all the widgets
         const widgets = await getWidgets(options);
 
-        //Get all the dependencies and put them together
-        for(let widget in widgets){
-            const dependencies =  await getDependencies(widgets[widget].urls.dependencies,options);
-
-            //avoid duplicates in script
-            scripts = scripts.concat(dependencies.js.filter(function(item){
-                return scripts.indexOf(item) < 0;
-            }));
-
-            scripts.push(widgets[widget].urls.script);
-
-            //avoid duplicates in styles
-            styles = styles.concat(dependencies.css.filter(function(item){
-                return styles.indexOf(item) < 0;
-            }));
+        for (let widget in widgets) {
+            loadAndInitializeWidget(widgets[widget]);
         }
-
-        //Inspect the dependencies and clean them
-        cleanScripts(scripts);
-
-        // Load all scripts and styles
-        promises.push(loadScripts(scripts));
-        promises.push(loadStyles(styles));
-        await Promise.all(promises)
-
-        //Initialise all the widets
-        for(let widget in widgets){
-            for(let element of widgets[widget].elements){
-
-                let $element = $(element);
-
-                //Check if the widget does have settings or not. And use them if apply.
-                let widgetSettingsElement = $element.data('plugin-settings')||$element.data('widget-settings');
-                if (widgetSettingsElement) {
-                    let settings = JSON.parse($(widgetSettingsElement).text());
-                   $element[widget](settings);
-                } else {
-                    $element[widget]();
-                }
-            }
-        }      
-    } 
+    }
 
     /**
-     * Get the list of widget used on the page.
-     * @param {object} {cdnUrl} the cdn Url passed in the options of the initialiseWidgets function
-     * @returns {array} an array containing the list of all widgets used on the page.
+     * Load the jQuery UI needed scripts and styles. 
+     * @function loadjQueryUi
+     * @param {string[]} jQueryUI - Paths of the different parts of jQuery UI needed  
+     * @memberof module:ec-script-loader 
+     * @return {Promise[]} An array containing a promise for each script or style loaded.
      */
-    const getWidgets = async (options) => {
-        /**
-         * REMAINING 'S :
-         * - Handle version madness !
-         */
-        let dataPlugins = document.body.querySelectorAll('[data-plugin],[data-widget]'),
-        widgets = {},
-        versionList = await getWidgetVersionList(options);
+    const loadjQueryUI = ({ jQueryUI }) => {
+        let promises = [];
+        for (let item of jQueryUI) {
+            let extension = getFileExtension(item);
+            if (extension === 'js') {
+                promises.push(getScript(convertUrlToCDNUrl(item)));
+            }
+            else if (extension === 'css') {
+                promises.push(getStyle(convertUrlToCDNUrl(item)));
+            }
+            else {
+                console.error(`Error in jQuery UI loading : "${item}" does not have a valid file extension. Accepted extensions are "js" or "css"`);
+            }
+            getScript
+        }
+        return promises;
+    }
 
-        for(let item of dataPlugins){
+    /**
+     * Return the list of widgets present on the page
+     * @param {string} widgetVersionUrl - Url to the widget version's file. This is basically a JSON file containing the name of all widgets and their version as key-value pair.
+     * @memberof module:ec-script-loader 
+     * @async
+     * @return {Object} The list of widgets present on the page
+     * @function getWidgets
+     */
+    const getWidgets = async ({ widgetVersionUrl }) => {
+        let dataWidgets = document.body.querySelectorAll('[data-plugin],[data-widget]'),
+            widgets = {},
+            versionList = await getWidgetVersionList(widgetVersionUrl);
+
+        for (let item of dataWidgets) {
 
             //if the widget is already initialized, skip it
-            if (item.classList.contains('has-plugin')) continue;
+            if (item.classList.contains('has-plugin') || item.classList.contains('has-widget')) continue;
 
             // Manipulate a bit the name to reformat it correctly. 
             // The behavior is that if a plugin contains an uppercase, this uppercase is replace by a dash and the letter in lowercase.
             // The manipulation here is done to get back the correct file names and path
 
             let name = item.getAttribute('data-plugin') || item.getAttribute('data-widget'),
-            nameParts = name.split('-');
-            nameParts.forEach((entry,index,array) => {
-                if(index !== 0)
-                {
+                nameParts = name.split('-');
+            nameParts.forEach((entry, index, array) => {
+                if (index !== 0) {
                     array[index] = entry.charAt(0).toUpperCase() + entry.slice(1);
                 }
             });
             name = nameParts.join('');
             let version = versionList[name];
 
-            if(widgets.hasOwnProperty(name)){ 
+            //Create the list of widgets
+            if (widgets.hasOwnProperty(name)) {
                 widgets[name].elements.push(item);
             } else {
-                widgets[name] = {};
+                widgets[name] = { name: name };
                 widgets[name].elements = [item];
 
                 // build the differents urls from the widget
-                let rootUrl =`${options.cdnUrl}/vendor/euroconsumers/ec-${name}/${version}/`;
-                widgets[name].urls ={
-                    script : `${rootUrl}ec-${name}.min.js`,
+                let rootUrl = `${cdnUrl}/vendor/euroconsumers/ec-${name}/${version}/`;
+                widgets[name].urls = {
+                    script: `${rootUrl}ec-${name}.min.js`,
                     style: `${rootUrl}ec-${name}.min.css`,
-                    dependencies:`${rootUrl}dependencies.json`
+                    dependencies: `${rootUrl}dependencies.json`
                 }
-                
+
             }
         }
         return widgets;
-    } 
-    
+    }
+
     /**
-     * Get the dependecies of a widget.
-     * @param {string} dependenciesUrl - url to the dependency JSON file. 
-     * @return {object} An object containing both Css & JS dependencies (as arrays) of a specific widget.
+     * Get the list containing the version of all the widgets existing in {@link https://design.euroconsumers.org/Common/widgets/}.
+     * @param {string} widgetVersionUrl - Url to the widget version file. This url is not modified so it can be really specific to the site using it.
+     * @return {Promise} A promise wich resolve in the list of widgets with the number of their latest version.
+     * @async
+     * @function getWidgetVersionList
+     * @memberof module:ec-script-loader
      */
-    const getDependencies = async (dependenciesUrl,{cdnUrl}) => {
+    const getWidgetVersionList = async (widgetVersionUrl) => {
+        let response = await fetch(widgetVersionUrl);
+        if (response.ok) {
+            return response.json();
+        }
+        console.error(`${widgetVersionUrl} is not a valid url`)
+        return undefined;
+    }
+
+    /**
+     * TODO
+     * @param {*} widget 
+     */
+    const loadAndInitializeWidget = async (widget) => {
+        let dependencies = await getDependencies(widget.urls.dependencies);
+        let widgetScript = {
+            version: getVersionNumber(widget.urls.script),
+            dependencies: []
+        };
+
+        //Manage the JS dependencies
+        for (let dependency of dependencies.js) {
+            let name = getLibraryName(dependency);
+            let version = getVersionNumber(dependency);
+
+            //Check if this library was already loaded
+            if (scripts[name] && scripts[name].version.indexOf(version) === -1) {
+                scripts[name].version.push(version);
+                console.warn(`Conflit in dependencies : you are trying to load more than one version of ${name}. Here is the list of version found until now : ${scripts[name].version.concat(' - ')}`);
+            } else if (!scripts[name]) {
+                scripts[name] = {
+                    version: [version],
+                    promise: getScript(dependency)
+                }
+            }
+            widgetScript.dependencies.push[scripts[name.promise]];
+        }
+
+        //Manage the CSS dependencies
+        for (let style of dependencies.css) {
+            getStyle(style);
+        }
+        getStyle(widget.urls.style,true);
+
+        await Promise.all(widgetScript.dependencies);
+        widgetScript.promise = await getScript(widget.urls.script);
+        initializeWidget(widget);
+    }
+
+    /**
+     * TODO
+     * @param {*} dependenciesUrl 
+     */
+    const getDependencies = async (dependenciesUrl) => {
         let dependencies = {
-            js : [],
-            css : []
+            js: [],
+            css: []
         };
 
         const response = await fetch(dependenciesUrl);
-        if(response.ok){
+        if (response.ok) {
             const json = await response.json();
 
             //New structure example. this can be used as test.
@@ -130,21 +208,12 @@
             // ];
 
             /********************************************************************************************************************************
-            * This code handle the new structure of the dependecies.json files. This structure is currently not implemented in any widget.  *
+            * This code handle the new structure of the dependencies.json files. This structure is currently not implemented in any widget.  *
             * The new structure looks like this the example in the previous comment                                                         *
             *********************************************************************************************************************************/
-            if(Array.isArray(json)){
-                for(let dependency of json){
-
-                    //Check if the dependency contains a hostname & remove it if it's the case. 
-                    let parts = dependency.replace(/http(s?):\/\//,'').split('/');
-                    if(parts[0].match(/^(?:https?:\/\/)?.+\.(?:.{2,3})/g)){
-                        parts.splice(0,1);
-                        dependency = `/${parts.join('/')}`;   
-                    }
-
-                    //the correct cdn hostname is here applied to all the dependencies.
-                    dependencies[getFileExtension(dependency)].push(`${cdnUrl}${dependency}`);
+            if (Array.isArray(json)) {
+                for (let dependency of json) {
+                    dependencies[getFileExtension(dependency)].push(convertUrlToCDNUrl(dependency));
                 }
                 return dependencies;
             }
@@ -153,43 +222,23 @@
             * Once all the widgets are migrated to the new structure it can be removed.     *
             * Replace it with an error message                                              *
             *********************************************************************************/
-            for(let type in json){
-                if(json.hasOwnProperty(type))
-                {
-                    for (let dependency in json[type]){
+            for (let type in json) {
+                if (json.hasOwnProperty(type)) {
+                    for (let dependency in json[type]) {
 
-                        if(typeof json[type][dependency] !== 'string')
-                        {
-                            for(let subdependency in json[type][dependency]){
-                                if(typeof json[type][dependency][subdependency] !== 'string')
-                                {
-                                    for(let subsubdependency in json[type][dependency][subdependency]){
-                                        let parts = json[type][dependency][subdependency][subsubdependency].replace(/http(s?):\/\//,'').split('/');
-                                        if(parts[0].match(/^(?:https?:\/\/)?.+\.(?:.{2,3})/g)){
-                                            parts.splice(0,1);
-                                            json[type][dependency][subdependency][subsubdependency] = `/${parts.join('/')}`;   
-                                        }
-                                        dependencies[type].push(`${cdnUrl}${json[type][dependency][subdependency][subsubdependency]}`);
+                        if (typeof json[type][dependency] !== 'string') {
+                            for (let subdependency in json[type][dependency]) {
+                                if (typeof json[type][dependency][subdependency] !== 'string') {
+                                    for (let subsubdependency in json[type][dependency][subdependency]) {
+                                        dependencies[type].push(convertUrlToCDNUrl(json[type][dependency][subdependency][subsubdependency]));
                                     }
-                                }else{
-                                    let parts = json[type][dependency][subdependency].replace(/http(s?):\/\//,'').split('/');
-                                    if(parts[0].match(/^(?:https?:\/\/)?.+\.(?:.{2,3})/g)){
-                                        parts.splice(0,1);
-                                        json[type][dependency][subdependency] = `/${parts.join('/')}`;   
-                                    }
-                                    dependencies[type].push(`${cdnUrl}${json[type][dependency][subdependency]}`);
+                                } else {
+                                    dependencies[type].push(convertUrlToCDNUrl(json[type][dependency][subdependency]));
                                 }
                             }
                         }
-                        else{
-                            //Check if the dependency contains a hostname & remove it if it's the case. 
-                            let parts = json[type][dependency].replace(/http(s?):\/\//,'').split('/');
-                            if(parts[0].match(/^(?:https?:\/\/)?.+\.(?:.{2,3})/g)){
-                                parts.splice(0,1);
-                                json[type][dependency] = `/${parts.join('/')}`;   
-                            }
-                        
-                            dependencies[type].push(`${cdnUrl}${json[type][dependency]}`);
+                        else {
+                            dependencies[type].push(convertUrlToCDNUrl(json[type][dependency]));
                         }
                     }
                 }
@@ -197,51 +246,39 @@
         } else {
             console.error(`Unable to get ${dependenciesUrl}. No dependencies will be loaded for this widget.`)
         }
-        return dependencies;        
+        return dependencies;
     }
 
     /**
-     * Check all the scripts. Remove the duplicates. Show warning if different versions are requested and remove the oldest.
-     * 
-     * @param {object} scripts 
+     * TODO
      */
-    const cleanScripts = (scripts) => {
-        /**
-         * TODO's :
-         *  Ensure that the min version is used. 
-         *  Ensure that the correct cdnUrl is used. 
-         *  Remove library duplicated with different versions.
-         *  Check that the script is not loaded yet. 
-         */
-        for(let group of scripts){
-            var groupIndex = scripts.indexOf(group);
-            for(let script of group){
-                // console.log(script);
-                // console.log(getFileExtension(script));
-                // console.log(getVersionNumber(script));
-                // console.log(getFileName(script))
+    const initializeWidget = (widget) => {
+        for (let element of widget.elements) {
+            let $element = $(element);
+            //Check if the widget does have settings or not. And use them if apply.
+            let widgetSettingsElement = $element.data('plugin-settings') || $element.data('widget-settings');
+            if (widgetSettingsElement) {
+                let settings = JSON.parse($(widgetSettingsElement).text());
+                $element[widget.name](settings);
+            } else {
+                $element[widget.name]();
             }
         }
-        
     }
 
-    /**
-     * Load all the scripts passed in argument group by group (one array at a time).
-     * @param {array} scripts - the lists of scripts in groups. Each script inside a group can be loaded independently that the other scripts of the same group.
-     */
-    const loadScripts = async (scripts) => {
-            let promises = [];
-            for (let script of scripts){
-                promises.push(getScript(script));
-            }
-            await Promise.all(promises);
+    const getAlreadyLoadedScripts = () => {
     }
+    
+    // #region Utilities
 
     /**
      * Load a specific script and add it to the DOM.
-     * @param {string} url - url to a js script file.
+     * @function getScript
+     * @param {string} url - Url to a js script file.
+     * @return {Promise} A promise to know if it fails or succeed
+     * @memberof module:ec-script-loader 
      */
-    const getScript = (url) =>{
+    const getScript = (url) => {
         return new Promise((resolve, reject) => {
             let script = document.createElement('script');
             script.type = 'text/javascript';
@@ -258,29 +295,18 @@
         })
     }
 
-
-
-    /**
-     * Load all the styles in the list given as argument.
-     * @param {array} styles - the list of styles.
-     */
-    const loadStyles = async (styles) => {
-        let promises = [];
-        for (let style of styles){
-            promises.push(getStyle(style));
-        }
-        await Promise.all(promises);
-    }
-
     /**
      * Load a specific stylesheet and add it to the DOM.
-     * @param {string} url - url to a css stylesheet.
+     * @function getStyle
+     * @param {string} url - Url to a css stylesheet.
+     * @return {Promise} A promise to know if it fails or succeed
+     * @memberof module:ec-script-loader
      */
-    const getStyle = (url) => {
+    const getStyle = (url,canFail) => {
         return new Promise((resolve, reject) => {
-            var head  = document.getElementsByTagName('head')[0];
-            var link  = document.createElement('link');
-            link.rel  = 'stylesheet';
+            let head = document.getElementsByTagName('head')[0];
+            let link = document.createElement('link');
+            link.rel = 'stylesheet';
             link.type = 'text/css';
             link.href = url;
             link.media = 'all';
@@ -289,62 +315,135 @@
                 resolve();
             }
             link.onerror = function (err) {
-                console.warn(err);
-                reject(err);
+                if(canFail){
+                    resolve()
+                }
+                else{
+                    console.warn(err);
+                    reject(err);
+                }
             }
         })
     }
 
     /**
      * return the extension of the file in the given path.
-     * @param {string} path - file path
+     * @function getFileExtension
+     * @param {string} path - File path
+     * @return {string} The file extension or undefined.
+     * @memberof module:ec-script-loader
      */
-    const getFileExtension = (path) =>{
+    const getFileExtension = (path) => {
         let index = path.lastIndexOf('.');
-        if(index === -1 || index === path.length - 1){
+        if (index === -1 || index === path.length - 1) {
             console.error(`"${path}" is not a correct url.`);
             return undefined;
         }
-        return path.slice(index+1);
+        return path.slice(index + 1);
     }
 
     /**
-     * return the version of the file in the given path. This version number is retrieved by searching 
-     * @param {string} path - file path
+     * Remove the hostname (and protocol) of the given url (if apply) then add the cdn hostname.
+     * @function convertUrlToCDNUrl
+     * @param {string} url - Url to clean
+     * @return {string} The url with the defined cdn hostname.
+     * @memberof module:ec-script-loader
      */
-    const getVersionNumber = (path) => {
-        let versionEnd = path.lastIndexOf('/'),
-        versionStart = path.lastIndexOf('/',versionEnd - 1);
-        if(versionStart === -1 || versionEnd === path.length){
-            console.error(`"${path}" does not contain a version number.`);
-            return undefined;
+    const convertUrlToCDNUrl = (url) => {
+        //Remove the protocol then split on '/'. the goal of removing the protocol is to facilitate the split on '/'. 
+        let parts = url.replace(/http(s?):\/\//, '').split('/');
+
+        //If the first part of a url is a hostname, remove it and rebuild the url. 
+        if (parts[0].match(/^(?:https?:\/\/)?.+\.(?:.{2,3})/g)) {
+            parts.splice(0, 1);
+            url = `/${parts.join('/')}`;
         }
-        return path.substring(versionStart+1,versionEnd)
+
+        //Prepend the CDN Url
+        return `${cdnUrl}${url}`;
+
     }
 
     /**
-     * return the name of the library in the given path. This means the filename without it's extension
+     * return the name of the library in the given path.(The filename without its extension)
+     * @function getLibraryName
      * @param {string} path 
+     * @return  {string} the library name
+     * @memberof module:ec-script-loader 
      */
-    const getFileName = (path) => {
+    const getLibraryName = (path) => {
         //TODO : force min version to all filename. NEED TO BE CHECKED WITH KVG
         let begin = path.lastIndexOf('/') + 1,
             end = path.lastIndexOf('.');
-        if(begin >= end){
+        if (begin >= end) {
             console.error(`"${path}" does not contain a version number.`);
             return undefined;
         }
 
-        return path.substring(begin,end);
+        return path.substring(begin, end);
     }
 
-    const getWidgetVersionList = async ({widgetVersionUrl}) =>  {
-        let response = await fetch(widgetVersionUrl);
-        if(response.ok){
-            return response.json();
+    /**
+     * return the version number of the file in the given path. This version number is retrieved by searching in the before last part of the pag
+     * @param {string} path 
+     * @return {string}
+     * @memberof module:ec-script-loader 
+     */
+    const getVersionNumber = (path) => {
+        let versionEnd = path.lastIndexOf('/'),
+            versionStart = path.lastIndexOf('/', versionEnd - 1);
+        if (versionStart === -1 || versionEnd === path.length) {
+            console.error(`"${path}" does not contain a version number.`);
+            return undefined;
         }
-        console.error(`${widgetVersionUrl} is not a valid url`)
-       return undefined;
+        return path.substring(versionStart + 1, versionEnd)
     }
+    // #endregion 
 
-})()
+    //jQuery replacement function
+    //This code is based on http://writing.colin-gourlay.com/safely-using-ready-before-including-jquery/ 
+    ((w, d, u) => {
+        // Define two queues for handlers
+        w.readyQ = [];
+        w.bindReadyQ = [];
+
+        // Push a handler into the correct queue
+        function pushToQ(x, y) {
+            if (x == "ready") {
+                w.bindReadyQ.push(y);
+            } else {
+                w.readyQ.push(x);
+            }
+        }
+
+        // Define an alias object (for use later)
+        let alias = {
+            ready: pushToQ,
+            bind: pushToQ
+        }
+
+        // Define the fake jQuery function to capture handlers
+        w.$ = w.jQuery = function (handler) {
+            if (handler === d || handler === u) {
+                // Queue $(document).ready(handler), $().ready(handler)
+                // and $(document).bind("ready", handler) by returning
+                // an object with alias methods for pushToQ
+                return alias;
+            } else {
+                // Queue $(handler)
+                pushToQ(handler);
+            }
+        }
+
+        jQueryPromise = getScript(jQueryPath).then(() => {
+            $.each(readyQ, function (index, handler) {
+                $(handler);
+            });
+            $.each(bindReadyQ, function (index, handler) {
+                $(document).bind("ready", handler);
+            });
+        })
+
+    })(window, document);
+
+})(window, document);
