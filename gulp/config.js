@@ -61,6 +61,9 @@ module.exports = {
         },
         jsdoc : {
             src: path.join(rootDir,'jsdoc.json')
+        },
+        readme : {
+            src: path.join(rootDir,'README.md')
         }
     }
 }

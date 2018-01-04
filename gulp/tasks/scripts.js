@@ -54,7 +54,7 @@ gulp.task('source-scripts', () => {
 
 gulp.task('jsdoc', () =>{
     let config = require(paths.jsdoc.src);
-    gulp.src(path.join(paths.js.entry),{read: false})
+    gulp.src([paths.js.entry,paths.readme.src],{read: false})
     .pipe(jsdoc(config));
 })
 
