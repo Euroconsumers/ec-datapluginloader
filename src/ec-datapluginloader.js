@@ -1,5 +1,5 @@
 /**
- * Euroconsumers Script Loader
+ * Euroconsumers Script Loader 
  * @module ec-script-loader
  * @author Raphaël Desaegher (belux\rds) <rdesaegher@test-achats.be>
  * @license LGPL-3.0
@@ -23,11 +23,11 @@
         styles = []
 
     window.loadScriptsAndWidgets = async (options) => {
-        //Check which scripts are already loaded
-        getAlreadyLoadedScripts();
-
         cdnUrl = options.cdnUrl || 'https://cdn.euroconsumers.org';
 
+        //Check which scripts are already loaded
+        getAlreadyLoadedScripts();
+        
         //wait that jQuery is loaded before starting
         await jQueryPromise;
 
@@ -153,7 +153,7 @@
     const loadAndInitializeWidget = async (widget) => {
         let dependencies = await getDependencies(widget.urls.dependencies);
         let widgetScript = {
-            version: getVersionNumber(widget.urls.script),
+            version: [getVersionNumber(widget.urls.script)],
             dependencies: []
         };
 
@@ -182,7 +182,12 @@
         getStyle(widget.urls.style,true);
 
         await Promise.all(widgetScript.dependencies);
-        widgetScript.promise = await getScript(widget.urls.script);
+
+        widgetScript.promise = getScript(widget.urls.script);
+        scripts[widget.name] = widgetScript;   
+
+        await widgetScript.promise;
+
         initializeWidget(widget);
     }
 
@@ -266,7 +271,20 @@
         }
     }
 
+    /**
+     * TODO
+     */
     const getAlreadyLoadedScripts = () => {
+        let loaded = document.querySelectorAll('script[src]');
+        for(let element of loaded){
+            let source = element.src;
+            if(getDomainName(source) === getDomainName(cdnUrl) || getDomainName(source) === window.location.hostname){
+                scripts[getLibraryName(source)] = {
+                    version : [getVersionNumber(source)],
+                    promise : Promise.resolve()
+                }
+            }   
+        }
     }
     
     // #region Utilities
@@ -376,7 +394,7 @@
         let begin = path.lastIndexOf('/') + 1,
             end = path.lastIndexOf('.');
         if (begin >= end) {
-            console.error(`"${path}" does not contain a version number.`);
+            console.error(`"${path}" is not a correct path.`);
             return undefined;
         }
 
@@ -397,6 +415,21 @@
             return undefined;
         }
         return path.substring(versionStart + 1, versionEnd)
+    }
+
+    /**
+     * TODO
+     * @param {*} url 
+     */
+    const getDomainName = (url) => {
+        if(url.startsWith('chrome-extension://')){
+            return 'chrome-extension://';
+        }
+        let parts = url.replace(/http(s?):\/\//, '').split('/');
+        if (parts[0].match(/^(?:https?:\/\/)?.+\.(?:.{2,3})/g)) {
+            return parts[0];
+        }
+        return window.location.hostname;
     }
     // #endregion 
 
