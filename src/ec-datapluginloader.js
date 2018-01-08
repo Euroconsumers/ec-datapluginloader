@@ -18,12 +18,13 @@
     const jQueryPath = "https://cdn.euroconsumers.org/vendor/jquery/jquery/2.1.4/jquery-2.1.4.min.js";
 
     let jQueryPromise,
-        cdnUrl,
         scripts = {},
-        styles = []
+        styles = [],
+        _options;
 
     window.loadScriptsAndWidgets = async (options) => {
-        cdnUrl = options.cdnUrl || 'https://cdn.euroconsumers.org';
+        options.cdnUrl = options.cdnUrl || 'https://cdn.euroconsumers.org';
+        _options = options;
 
         //Check which scripts are already loaded
         getAlreadyLoadedScripts();
@@ -31,21 +32,23 @@
         //wait that jQuery is loaded before starting
         await jQueryPromise;
 
-        //Load and initialize all the widgets.
-        processWidgets(options);
+        //Load jQuery UI
+        await Promise.all(loadjQueryUI());
 
+        //Load and initialize all the widgets.
+        processWidgets();
+    }
+
+    window.reloadWidgets = async () => {
+        processWidgets();
     }
 
     /**
      * TODO
-     * @param {*} options 
      */
-    const processWidgets = async (options) => {
-        //Load jQuery UI
-        await Promise.all(loadjQueryUI(options));
-
+    const processWidgets = async () => {
         //Get all the widgets
-        const widgets = await getWidgets(options);
+        const widgets = await getWidgets();
 
         for (let widget in widgets) {
             loadAndInitializeWidget(widgets[widget]);
@@ -59,8 +62,10 @@
      * @memberof module:ec-script-loader 
      * @return {Promise[]} An array containing a promise for each script or style loaded.
      */
-    const loadjQueryUI = ({ jQueryUI }) => {
-        let promises = [];
+    const loadjQueryUI = () => {
+        let promises = [],
+        { jQueryUI } = _options;
+        
         for (let item of jQueryUI) {
             let extension = getFileExtension(item);
             if (extension === 'js') {
@@ -85,10 +90,10 @@
      * @return {Object} The list of widgets present on the page
      * @function getWidgets
      */
-    const getWidgets = async ({ widgetVersionUrl }) => {
+    const getWidgets = async () => {
         let dataWidgets = document.body.querySelectorAll('[data-plugin],[data-widget]'),
             widgets = {},
-            versionList = await getWidgetVersionList(widgetVersionUrl);
+            versionList = await getWidgetVersionList(_options.widgetVersionUrl);
 
         for (let item of dataWidgets) {
 
@@ -117,7 +122,7 @@
                 widgets[name].elements = [item];
 
                 // build the differents urls from the widget
-                let rootUrl = `${cdnUrl}/vendor/euroconsumers/ec-${name}/${version}/`;
+                let rootUrl = `${_options.cdnUrl}/vendor/euroconsumers/ec-${name}/${version}/`;
                 widgets[name].urls = {
                     script: `${rootUrl}ec-${name}.min.js`,
                     style: `${rootUrl}ec-${name}.min.css`,
@@ -268,6 +273,7 @@
             } else {
                 $element[widget.name]();
             }
+            element.classList.add('has-widget'); 
         }
     }
 
@@ -278,7 +284,7 @@
         let loaded = document.querySelectorAll('script[src]');
         for(let element of loaded){
             let source = element.src;
-            if(getDomainName(source) === getDomainName(cdnUrl) || getDomainName(source) === window.location.hostname){
+            if(getDomainName(source) === getDomainName(_options.cdnUrl) || getDomainName(source) === window.location.hostname){
                 scripts[getLibraryName(source)] = {
                     version : [getVersionNumber(source)],
                     promise : Promise.resolve()
@@ -286,7 +292,7 @@
             }   
         }
     }
-    
+   
     // #region Utilities
 
     /**
@@ -378,7 +384,7 @@
         }
 
         //Prepend the CDN Url
-        return `${cdnUrl}${url}`;
+        return `${_options.cdnUrl}${url}`;
 
     }
 

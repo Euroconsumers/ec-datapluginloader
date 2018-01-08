@@ -75,3 +75,14 @@
 	<textarea data-plugin="richtext-editor">        
        
 </textarea>
+<script>
+  setTimeout(function(){
+    $.ajax("test-ajax-loading.html").success(function(result){
+      setTimeout(function(){
+        $('body').prepend(result);
+        console.log("ok");
+        reloadWidgets();
+      },2000);
+    });
+  },5000)
+</script>
