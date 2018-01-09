@@ -21,7 +21,7 @@
         scripts = {},
         styles = [],
         _options;
-
+    
     window.loadScriptsAndWidgets = async (options) => {
         options.cdnUrl = options.cdnUrl || 'https://cdn.euroconsumers.org';
         _options = options;
@@ -44,7 +44,10 @@
     }
 
     /**
-     * TODO
+     * Get the list of widgets that were not yet processed and initialize them.
+     * @async
+     * @memberof module:ec-script-loader
+     * @function processWidgets
      */
     const processWidgets = async () => {
         //Get all the widgets
@@ -58,7 +61,6 @@
     /**
      * Load the jQuery UI needed scripts and styles. 
      * @function loadjQueryUi
-     * @param {string[]} jQueryUI - Paths of the different parts of jQuery UI needed  
      * @memberof module:ec-script-loader 
      * @return {Promise[]} An array containing a promise for each script or style loaded.
      */
@@ -84,7 +86,6 @@
 
     /**
      * Return the list of widgets present on the page
-     * @param {string} widgetVersionUrl - Url to the widget version's file. This is basically a JSON file containing the name of all widgets and their version as key-value pair.
      * @memberof module:ec-script-loader 
      * @async
      * @return {Object} The list of widgets present on the page
@@ -93,7 +94,7 @@
     const getWidgets = async () => {
         let dataWidgets = document.body.querySelectorAll('[data-plugin],[data-widget]'),
             widgets = {},
-            versionList = await getWidgetVersionList(_options.widgetVersionUrl);
+            versionList = await getWidgetVersionList();
 
         for (let item of dataWidgets) {
 
@@ -136,14 +137,14 @@
 
     /**
      * Get the list containing the version of all the widgets existing in {@link https://design.euroconsumers.org/Common/widgets/}.
-     * @param {string} widgetVersionUrl - Url to the widget version file. This url is not modified so it can be really specific to the site using it.
      * @return {Promise} A promise wich resolve in the list of widgets with the number of their latest version.
      * @async
      * @function getWidgetVersionList
      * @memberof module:ec-script-loader
      */
-    const getWidgetVersionList = async (widgetVersionUrl) => {
-        let response = await fetch(widgetVersionUrl);
+    const getWidgetVersionList = async () => {
+        let widgetVersionUrl = _options.widgetVersionUrl,
+            response = await fetch(widgetVersionUrl);
         if (response.ok) {
             return response.json();
         }
@@ -152,8 +153,11 @@
     }
 
     /**
-     * TODO
-     * @param {*} widget 
+     * Load the scripts and initialize a specific widget passed as argument.
+     * @param {Object} widget - The widget to load and initialize.
+     * @async
+     * @function loadAndInitializeWidget
+     * @memberof module:ec-script-loader
      */
     const loadAndInitializeWidget = async (widget) => {
         let dependencies = await getDependencies(widget.urls.dependencies);
@@ -197,8 +201,13 @@
     }
 
     /**
-     * TODO
-     * @param {*} dependenciesUrl 
+     * Load the dependency file of a widget and transform this into a usable JSON object. 
+     * This function is quite long (and the code seems to be repeated) because this is still handling the "old structure" of the dependencies file. It will be shortened when all widgets are adapted to the new structure (flat array).
+     * @param {string} dependenciesUrl 
+     * @async
+     * @function getDependencies
+     * @return {Object} An object containing the list of scripts & styles urls to be loaded as dependencies of a specific widget.
+     * @memberof module:ec-script-loader
      */
     const getDependencies = async (dependenciesUrl) => {
         let dependencies = {
@@ -260,7 +269,10 @@
     }
 
     /**
-     * TODO
+     * Initialize a widget based on his name. If settings for the widgets are provided, they are used. All the elements using this widget detected on the page are initialized.
+     * @param {Object} - the widget to initialize.
+     * @function initializeWidget
+     * @memberof module:ec-script-loader
      */
     const initializeWidget = (widget) => {
         for (let element of widget.elements) {
@@ -278,7 +290,10 @@
     }
 
     /**
-     * TODO
+     * Check the document in order to get the list of script that are already loaded. This is used to not load a script which was already loaded in a "classic" way.
+     * It alters the scripts object (available in all the widget loader).
+     * @function getAlreadyLoadedScripts
+     * @memberof module:ec-script-loader
      */
     const getAlreadyLoadedScripts = () => {
         let loaded = document.querySelectorAll('script[src]');
@@ -391,8 +406,8 @@
     /**
      * return the name of the library in the given path.(The filename without its extension)
      * @function getLibraryName
-     * @param {string} path 
-     * @return  {string} the library name
+     * @param {string} path - Path to the library
+     * @return  {string} The library name
      * @memberof module:ec-script-loader 
      */
     const getLibraryName = (path) => {
@@ -408,9 +423,10 @@
     }
 
     /**
-     * return the version number of the file in the given path. This version number is retrieved by searching in the before last part of the pag
-     * @param {string} path 
-     * @return {string}
+     * return the version number of the file in the given path. This version number is retrieved by searching in the before last part of the page
+     * @param {string} path  - Path to the library (it should contain the version number)
+     * @return {string} The version number
+     * @function getVersionNumber
      * @memberof module:ec-script-loader 
      */
     const getVersionNumber = (path) => {
@@ -424,8 +440,10 @@
     }
 
     /**
-     * TODO
-     * @param {*} url 
+     * return the hostname of the given url (or the one from window.location if the path is relative)
+     * @param {script} url - The url in which we will exclude the hostname
+     * @function getDomainName
+     * @return {string} - The domain name 
      */
     const getDomainName = (url) => {
         if(url.startsWith('chrome-extension://')){

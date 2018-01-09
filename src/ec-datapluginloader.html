@@ -80,7 +80,6 @@
     $.ajax("test-ajax-loading.html").success(function(result){
       setTimeout(function(){
         $('body').prepend(result);
-        console.log("ok");
         reloadWidgets();
       },2000);
     });
