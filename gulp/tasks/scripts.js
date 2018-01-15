@@ -33,10 +33,7 @@ gulp.task('source-scripts', () => {
         entries: path.join(paths.js.entry),
         debug:   true
     })
-    .transform(babelify, {
-        presets: ['es2015'],
-        plugins: ['transform-runtime', 'transform-async-to-generator']
-    })
+    .transform(babelify)
     .bundle()
     .pipe(source(`${pkgname}.js`))
     .pipe(polyfiller(['Fetch','Promise']))
