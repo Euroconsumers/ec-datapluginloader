@@ -4,6 +4,9 @@
  * @author Raphaël Desaegher (belux\rds) <rdesaegher@test-achats.be>
  * @license LGPL-3.0
  */
+
+import {getLibraryName} from './modules/utilities.js'
+
 (function (window, document, jQuery) {
 
     'use strict';
@@ -15,7 +18,7 @@
      * @type {string}
      * @memberof module:ec-script-loader
      */
-    const jQueryPath = "https://cdn.euroconsumers.org/vendor/jquery/jquery/2.1.4/jquery-2.1.4.min.js";
+    const jQueryPath = 'https://cdn.euroconsumers.org/vendor/jquery/jquery/2.1.4/jquery-2.1.4.min.js';
 
     let jQueryPromise,
         scripts = {},
@@ -401,25 +404,6 @@
         //Prepend the CDN Url
         return `${_options.cdnUrl}${url}`;
 
-    }
-
-    /**
-     * return the name of the library in the given path.(The filename without its extension)
-     * @function getLibraryName
-     * @param {string} path - Path to the library
-     * @return  {string} The library name
-     * @memberof module:ec-script-loader 
-     */
-    const getLibraryName = (path) => {
-        //TODO : force min version to all filename. NEED TO BE CHECKED WITH KVG
-        let begin = path.lastIndexOf('/') + 1,
-            end = path.lastIndexOf('.');
-        if (begin >= end) {
-            console.error(`"${path}" is not a correct path.`);
-            return undefined;
-        }
-
-        return path.substring(begin, end);
     }
 
     /**
