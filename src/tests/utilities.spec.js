@@ -62,9 +62,6 @@ describe('Utilities',function(){
     });
 
     describe('getDomainName()',function(){
-        before(function(){
-
-        })
         it('should return the domain name of the url passed',function(){
             assert.equal(getDomainName('https://cdn.euroconsumers.org/vendor/jquery/jquery/2.1.5/jquery-2.1.4.min.js'),'cdn.euroconsumers.org');
             assert.equal(getDomainName('cdn.euroconsumers.org/test/file.js'),'cdn.euroconsumers.org');
