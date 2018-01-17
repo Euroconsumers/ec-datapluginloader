@@ -5,7 +5,7 @@
  * @license LGPL-3.0
  */
 
-import {getLibraryName} from './modules/utilities.js'
+import { getLibraryName, getVersionNumber, getFileExtension, getDomainName } from './modules/utilities.js'
 
 (function (window, document, jQuery) {
 
@@ -24,14 +24,14 @@ import {getLibraryName} from './modules/utilities.js'
         scripts = {},
         styles = [],
         _options;
-    
+
     window.loadScriptsAndWidgets = async (options) => {
         options.cdnUrl = options.cdnUrl || 'https://cdn.euroconsumers.org';
         _options = options;
 
         //Check which scripts are already loaded
         getAlreadyLoadedScripts();
-        
+
         //wait that jQuery is loaded before starting
         await jQueryPromise;
 
@@ -69,8 +69,8 @@ import {getLibraryName} from './modules/utilities.js'
      */
     const loadjQueryUI = () => {
         let promises = [],
-        { jQueryUI } = _options;
-        
+            { jQueryUI } = _options;
+
         for (let item of jQueryUI) {
             let extension = getFileExtension(item);
             if (extension === 'js') {
@@ -191,12 +191,12 @@ import {getLibraryName} from './modules/utilities.js'
         for (let style of dependencies.css) {
             getStyle(style);
         }
-        getStyle(widget.urls.style,true);
+        getStyle(widget.urls.style, true);
 
         await Promise.all(widgetScript.dependencies);
 
         widgetScript.promise = getScript(widget.urls.script);
-        scripts[widget.name] = widgetScript;   
+        scripts[widget.name] = widgetScript;
 
         await widgetScript.promise;
 
@@ -288,7 +288,7 @@ import {getLibraryName} from './modules/utilities.js'
             } else {
                 $element[widget.name]();
             }
-            element.classList.add('has-widget'); 
+            element.classList.add('has-widget');
         }
     }
 
@@ -300,17 +300,18 @@ import {getLibraryName} from './modules/utilities.js'
      */
     const getAlreadyLoadedScripts = () => {
         let loaded = document.querySelectorAll('script[src]');
-        for(let element of loaded){
+        for (let element of loaded) {
             let source = element.src;
-            if(getDomainName(source) === getDomainName(_options.cdnUrl) || getDomainName(source) === window.location.hostname){
+            //We do not rely on scripts that are not loaded from the CDN or the current domain.
+            if (getDomainName(source) === getDomainName(_options.cdnUrl) || getDomainName(source) === window.location.hostname) {
                 scripts[getLibraryName(source)] = {
-                    version : [getVersionNumber(source)],
-                    promise : Promise.resolve()
+                    version: [getVersionNumber(source)],
+                    promise: Promise.resolve()
                 }
-            }   
+            }
         }
     }
-   
+
     // #region Utilities
 
     /**
@@ -344,7 +345,7 @@ import {getLibraryName} from './modules/utilities.js'
      * @return {Promise} A promise to know if it fails or succeed
      * @memberof module:ec-script-loader
      */
-    const getStyle = (url,canFail) => {
+    const getStyle = (url, canFail) => {
         return new Promise((resolve, reject) => {
             let head = document.getElementsByTagName('head')[0];
             let link = document.createElement('link');
@@ -357,31 +358,15 @@ import {getLibraryName} from './modules/utilities.js'
                 resolve();
             }
             link.onerror = function (err) {
-                if(canFail){
+                if (canFail) {
                     resolve()
                 }
-                else{
+                else {
                     console.warn(err);
                     reject(err);
                 }
             }
         })
-    }
-
-    /**
-     * return the extension of the file in the given path.
-     * @function getFileExtension
-     * @param {string} path - File path
-     * @return {string} The file extension or undefined.
-     * @memberof module:ec-script-loader
-     */
-    const getFileExtension = (path) => {
-        let index = path.lastIndexOf('.');
-        if (index === -1 || index === path.length - 1) {
-            console.error(`"${path}" is not a correct url.`);
-            return undefined;
-        }
-        return path.slice(index + 1);
     }
 
     /**
@@ -406,39 +391,6 @@ import {getLibraryName} from './modules/utilities.js'
 
     }
 
-    /**
-     * return the version number of the file in the given path. This version number is retrieved by searching in the before last part of the page
-     * @param {string} path  - Path to the library (it should contain the version number)
-     * @return {string} The version number
-     * @function getVersionNumber
-     * @memberof module:ec-script-loader 
-     */
-    const getVersionNumber = (path) => {
-        let versionEnd = path.lastIndexOf('/'),
-            versionStart = path.lastIndexOf('/', versionEnd - 1);
-        if (versionStart === -1 || versionEnd === path.length) {
-            console.error(`"${path}" does not contain a version number.`);
-            return undefined;
-        }
-        return path.substring(versionStart + 1, versionEnd)
-    }
-
-    /**
-     * return the hostname of the given url (or the one from window.location if the path is relative)
-     * @param {script} url - The url in which we will exclude the hostname
-     * @function getDomainName
-     * @return {string} - The domain name 
-     */
-    const getDomainName = (url) => {
-        if(url.startsWith('chrome-extension://')){
-            return 'chrome-extension://';
-        }
-        let parts = url.replace(/http(s?):\/\//, '').split('/');
-        if (parts[0].match(/^(?:https?:\/\/)?.+\.(?:.{2,3})/g)) {
-            return parts[0];
-        }
-        return window.location.hostname;
-    }
     // #endregion 
 
     //jQuery replacement function

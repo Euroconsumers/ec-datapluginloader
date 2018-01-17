@@ -22,6 +22,7 @@ module.exports = {
         js: {
             entry: path.join(srcDir, `${package.name}.js`),
             src: path.join(srcDir, '*.js'),
+            modules: path.join(srcDir,'modules','*.js'),
             dst: dstDir,
             //local: localDir
         },
