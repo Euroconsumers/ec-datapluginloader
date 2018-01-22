@@ -73,3 +73,27 @@ export function getDomainName(url) {
     //If the url does not contains a domain name, it means it's relative, we can return the hostname of the window location in this case.
     return window.location.hostname;
 }
+
+/**
+ * Remove the hostname (and protocol) of the given url (if apply) then add the hostname passed as argument.
+ * @function changeUrlHostname
+ * @param {string} url - Url to clean
+ * @param {string} hostname - the hostname where the  url should be transfered. 
+ * @return {string} The url with the defined hostname.
+ * @memberof module:ec-script-loader
+ */
+export function changeUrlHostname(url,hostname) {
+    //Remove the protocol then split on '/'. the goal of removing the protocol is to facilitate the split on '/'. 
+    let parts = url.replace(/http(s?):\/\//, '').split('/');
+
+    //If the first part of a url is a hostname, remove it and rebuild the url. 
+    if (parts[0].match(/^(?:https?:\/\/)?.+\.(?:.{2,3})/g)) {
+        parts.splice(0, 1);
+        url = `${parts.join('/')}`;
+    }
+    if(url.indexOf('/') != 0 ){
+        url= `/${url}`;
+    }
+    //Prepend the CDN Url
+    return `${hostname}${url}`;
+}

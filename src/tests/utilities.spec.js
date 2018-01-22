@@ -3,8 +3,8 @@ require('jsdom-global')('',{
     url: 'https://example.org/'
 });
 
-let assert  = require('assert'),
-    { getLibraryName, getVersionNumber,getFileExtension,getDomainName } = require('../modules/utilities');
+let assert  = require('chai').assert,
+    { changeUrlHostname, getDomainName, getFileExtension, getLibraryName, getVersionNumber} = require('../modules/utilities');
 
 describe('Utilities',function(){
     describe('getLibraryName()',function(){
@@ -73,5 +73,18 @@ describe('Utilities',function(){
         it('should return the window.location.hostname when there is no hostname in the url (meaning it is a relative url.', function(){
             assert.equal(getDomainName('/test/file.js'),'example.org');
         })
+    });
+
+    describe('changeUrlHostname()',function(){
+        it('should return the given url with the new hostname',function(){
+            assert.equal(changeUrlHostname('www.google.com/test/success','www.euroconsumers.org'),'www.euroconsumers.org/test/success');
+        });
+        it('should work with a protocol',function(){
+            assert.equal(changeUrlHostname('http://www.google.com/test/success','www.euroconsumers.org'),'www.euroconsumers.org/test/success');
+        });
+        it('should work if the original url does not have a hostname',function(){
+            assert.equal(changeUrlHostname('/test/success','www.euroconsumers.org'),'www.euroconsumers.org/test/success');
+            assert.equal(changeUrlHostname('test/success','www.euroconsumers.org'),'www.euroconsumers.org/test/success');
+        });
     });
 });

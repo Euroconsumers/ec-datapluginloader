@@ -5,10 +5,11 @@
  * @license LGPL-3.0
  */
 
-import { getLibraryName, getVersionNumber, getFileExtension, getDomainName } from './modules/utilities.js'
+import { getLibraryName, getVersionNumber, getFileExtension, getDomainName, changeUrlHostname } from './modules/utilities';
+import { getAlreadyLoadedScripts, getScript, getStyle } from './modules/dom-manipulation'
+import { jqPreload } from './modules/jquery-preload';
 
 (function (window, document, jQuery) {
-
     'use strict';
 
     /**
@@ -20,6 +21,8 @@ import { getLibraryName, getVersionNumber, getFileExtension, getDomainName } fro
      */
     const jQueryPath = 'https://cdn.euroconsumers.org/vendor/jquery/jquery/2.1.4/jquery-2.1.4.min.js';
 
+    jQueryPromise = jqPreload(window, document, jQueryPath);
+
     let jQueryPromise,
         scripts = {},
         styles = [],
@@ -30,7 +33,7 @@ import { getLibraryName, getVersionNumber, getFileExtension, getDomainName } fro
         _options = options;
 
         //Check which scripts are already loaded
-        getAlreadyLoadedScripts();
+        getAlreadyLoadedScripts(scripts, getDomainName(_options.cdnUrl));
 
         //wait that jQuery is loaded before starting
         await jQueryPromise;
@@ -74,10 +77,10 @@ import { getLibraryName, getVersionNumber, getFileExtension, getDomainName } fro
         for (let item of jQueryUI) {
             let extension = getFileExtension(item);
             if (extension === 'js') {
-                promises.push(getScript(convertUrlToCDNUrl(item)));
+                promises.push(getScript(changeUrlHostname(item, _options.cdnUrl)));
             }
             else if (extension === 'css') {
-                promises.push(getStyle(convertUrlToCDNUrl(item)));
+                promises.push(getStyle(changeUrlHostname(item, _options.cdnUrl)));
             }
             else {
                 console.error(`Error in jQuery UI loading : "${item}" does not have a valid file extension. Accepted extensions are "js" or "css"`);
@@ -235,7 +238,7 @@ import { getLibraryName, getVersionNumber, getFileExtension, getDomainName } fro
             *********************************************************************************************************************************/
             if (Array.isArray(json)) {
                 for (let dependency of json) {
-                    dependencies[getFileExtension(dependency)].push(convertUrlToCDNUrl(dependency));
+                    dependencies[getFileExtension(dependency)].push(changeUrlHostname(dependency, _options.cdnUrl));
                 }
                 return dependencies;
             }
@@ -252,15 +255,15 @@ import { getLibraryName, getVersionNumber, getFileExtension, getDomainName } fro
                             for (let subdependency in json[type][dependency]) {
                                 if (typeof json[type][dependency][subdependency] !== 'string') {
                                     for (let subsubdependency in json[type][dependency][subdependency]) {
-                                        dependencies[type].push(convertUrlToCDNUrl(json[type][dependency][subdependency][subsubdependency]));
+                                        dependencies[type].push(changeUrlHostname(json[type][dependency][subdependency][subsubdependency], _options.cdnUrl));
                                     }
                                 } else {
-                                    dependencies[type].push(convertUrlToCDNUrl(json[type][dependency][subdependency]));
+                                    dependencies[type].push(changeUrlHostname(json[type][dependency][subdependency], _options.cdnUrl));
                                 }
                             }
                         }
                         else {
-                            dependencies[type].push(convertUrlToCDNUrl(json[type][dependency]));
+                            dependencies[type].push(changeUrlHostname(json[type][dependency], _options.cdnUrl));
                         }
                     }
                 }
@@ -291,152 +294,5 @@ import { getLibraryName, getVersionNumber, getFileExtension, getDomainName } fro
             element.classList.add('has-widget');
         }
     }
-
-    /**
-     * Check the document in order to get the list of script that are already loaded. This is used to not load a script which was already loaded in a "classic" way.
-     * It alters the scripts object (available in all the widget loader).
-     * @function getAlreadyLoadedScripts
-     * @memberof module:ec-script-loader
-     */
-    const getAlreadyLoadedScripts = () => {
-        let loaded = document.querySelectorAll('script[src]');
-        for (let element of loaded) {
-            let source = element.src;
-            //We do not rely on scripts that are not loaded from the CDN or the current domain.
-            if (getDomainName(source) === getDomainName(_options.cdnUrl) || getDomainName(source) === window.location.hostname) {
-                scripts[getLibraryName(source)] = {
-                    version: [getVersionNumber(source)],
-                    promise: Promise.resolve()
-                }
-            }
-        }
-    }
-
-    // #region Utilities
-
-    /**
-     * Load a specific script and add it to the DOM.
-     * @function getScript
-     * @param {string} url - Url to a js script file.
-     * @return {Promise} A promise to know if it fails or succeed
-     * @memberof module:ec-script-loader 
-     */
-    const getScript = (url) => {
-        return new Promise((resolve, reject) => {
-            let script = document.createElement('script');
-            script.type = 'text/javascript';
-            script.src = url;
-            script.async = false;
-            document.body.appendChild(script);
-            script.onload = function () {
-                resolve();
-            }
-            script.onerror = function (err) {
-                console.warn(e);
-                reject(err);
-            }
-        })
-    }
-
-    /**
-     * Load a specific stylesheet and add it to the DOM.
-     * @function getStyle
-     * @param {string} url - Url to a css stylesheet.
-     * @return {Promise} A promise to know if it fails or succeed
-     * @memberof module:ec-script-loader
-     */
-    const getStyle = (url, canFail) => {
-        return new Promise((resolve, reject) => {
-            let head = document.getElementsByTagName('head')[0];
-            let link = document.createElement('link');
-            link.rel = 'stylesheet';
-            link.type = 'text/css';
-            link.href = url;
-            link.media = 'all';
-            head.appendChild(link);
-            link.onload = function () {
-                resolve();
-            }
-            link.onerror = function (err) {
-                if (canFail) {
-                    resolve()
-                }
-                else {
-                    console.warn(err);
-                    reject(err);
-                }
-            }
-        })
-    }
-
-    /**
-     * Remove the hostname (and protocol) of the given url (if apply) then add the cdn hostname.
-     * @function convertUrlToCDNUrl
-     * @param {string} url - Url to clean
-     * @return {string} The url with the defined cdn hostname.
-     * @memberof module:ec-script-loader
-     */
-    const convertUrlToCDNUrl = (url) => {
-        //Remove the protocol then split on '/'. the goal of removing the protocol is to facilitate the split on '/'. 
-        let parts = url.replace(/http(s?):\/\//, '').split('/');
-
-        //If the first part of a url is a hostname, remove it and rebuild the url. 
-        if (parts[0].match(/^(?:https?:\/\/)?.+\.(?:.{2,3})/g)) {
-            parts.splice(0, 1);
-            url = `/${parts.join('/')}`;
-        }
-
-        //Prepend the CDN Url
-        return `${_options.cdnUrl}${url}`;
-
-    }
-
-    // #endregion 
-
-    //jQuery replacement function
-    //This code is based on http://writing.colin-gourlay.com/safely-using-ready-before-including-jquery/ 
-    ((w, d, u) => {
-        // Define two queues for handlers
-        w.readyQ = [];
-        w.bindReadyQ = [];
-
-        // Push a handler into the correct queue
-        function pushToQ(x, y) {
-            if (x == "ready") {
-                w.bindReadyQ.push(y);
-            } else {
-                w.readyQ.push(x);
-            }
-        }
-
-        // Define an alias object (for use later)
-        let alias = {
-            ready: pushToQ,
-            bind: pushToQ
-        }
-
-        // Define the fake jQuery function to capture handlers
-        w.$ = w.jQuery = function (handler) {
-            if (handler === d || handler === u) {
-                // Queue $(document).ready(handler), $().ready(handler)
-                // and $(document).bind("ready", handler) by returning
-                // an object with alias methods for pushToQ
-                return alias;
-            } else {
-                // Queue $(handler)
-                pushToQ(handler);
-            }
-        }
-
-        jQueryPromise = getScript(jQueryPath).then(() => {
-            $.each(readyQ, function (index, handler) {
-                $(handler);
-            });
-            $.each(bindReadyQ, function (index, handler) {
-                $(document).bind("ready", handler);
-            });
-        })
-
-    })(window, document);
 
 })(window, document);
