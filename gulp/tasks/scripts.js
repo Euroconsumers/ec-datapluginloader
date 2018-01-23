@@ -19,15 +19,6 @@ const
     { paths, pkgname }       = require('../config'),
     { ENV_DEV } = require('../envs')
 
-
-gulp.task('libs-scripts', () => {
-    // Not using buffer and source stream, because don't need
-    return gulp.src(paths.libs.src)
-    .pipe(babel())
-    .pipe(gulpUglify())
-    .pipe(gulp.dest(paths.libs.dst))
-})
-
 gulp.task('source-scripts', () => {
     return browserify({
         entries: path.join(paths.js.entry),
@@ -50,9 +41,10 @@ gulp.task('source-scripts', () => {
 })
 
 gulp.task('jsdoc', () =>{
-    let config = require(paths.jsdoc.src);
+    let config = require(paths.jsdoc.config);
+    config.opts.destination = paths.jsdoc.dst;
     gulp.src([paths.js.entry,paths.readme.src],{read: false})
     .pipe(jsdoc(config));
 })
 
-module.exports = gulp.task('scripts', ['libs-scripts', 'source-scripts','jsdoc'])
+module.exports = gulp.task('scripts', ['source-scripts','jsdoc'])

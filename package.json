@@ -38,6 +38,7 @@
     "browserify": "^14.4.0",
     "chai": "^4.1.1",
     "chai-webdriver": "^1.2.0",
+    "chromedriver": "^2.35.0",
     "docdash": "^0.4.0",
     "gulp": "^3.9.1",
     "gulp-autoprefixer": "^4.0.0",
@@ -59,10 +60,15 @@
     "jsdom": "11.5.1",
     "jsdom-global": "3.0.2",
     "mochawesome": "^2.3.0",
+    "mochawesome-report-generator": "^3.1.0",
     "path": "^0.12.7",
     "sass-module-importer": "^1.4.0",
     "selenium-webdriver": "^3.5.0",
     "vinyl-buffer": "^1.0.0",
-    "vinyl-source-stream": "^1.1.0"
+    "vinyl-source-stream": "^1.1.0",
+    "wdio-chromedriver-service": "^0.1.2",
+    "wdio-mocha-framework": "^0.5.12",
+    "wdio-mochawesome-reporter": "^1.1.4",
+    "wdio-selenium-standalone-service": "0.0.9"
   }
 }

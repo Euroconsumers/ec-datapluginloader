@@ -1,6 +1,5 @@
 require('./build')
 require('./clean')
-require('./examples')
 require('./liquid')
 require('./scripts')
 require('./server')

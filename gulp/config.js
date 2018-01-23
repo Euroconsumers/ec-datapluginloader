@@ -16,6 +16,7 @@ const
 module.exports = {
     pkgname: package.name,
     paths: {
+        rootDir,
         srcDir,
         dstDir,
         js: {
@@ -41,23 +42,20 @@ module.exports = {
             src: path.join(srcDir, '*.json'),
             dst: dstDir,
         },
-        examples: {
-            src: path.join(rootDir, 'examples', '**', '*.*'),
-            dst: path.join(dstDir, 'examples')
-        },
         test: {
             src: path.join(srcDir, '**', '*.spec.js'),
             output: path.join(rootDir, '_test'),
-        },
-        libs: {
-            src: path.join(rootDir, 'libs', '**', '*.js'),
-            dst: path.join(dstDir, 'libs'),
+            reportFile: 'report.json'
         },
         jsdoc : {
-            src: path.join(rootDir,'jsdoc.json')
+            config: path.join(rootDir,'config','jsdoc.json'),
+            dst: path.join(rootDir,'_doc' )
         },
         readme : {
             src: path.join(rootDir,'README.md')
+        },
+        webdriver : {
+            config : path.join(rootDir,'config','wdio.conf.js')
         }
     }
 }

@@ -6,4 +6,4 @@ const
 
 gulp.task('pre-build', ENV_DEV ? ['clean', 'server', 'watch'] : ['clean'])
 
-gulp.task('build', gulpSequence('pre-build', ['static', 'liquid', 'scripts', 'styles', 'examples']))
+gulp.task('build', gulpSequence('pre-build', ['static', 'liquid', 'scripts', 'styles'],'e2e'))

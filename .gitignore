@@ -60,4 +60,4 @@ typings/
 _dist/
 _site/
 _test/
-out/
+_doc/
