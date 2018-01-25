@@ -1,33 +1,27 @@
 const
-    gulp            = require('gulp'),
-    gulpSequence    = require('gulp-sequence'),
-    Launcher        = require('webdriverio/build/lib/launcher'),
-    marge           = require('mochawesome-report-generator'),
-    mocha           = require('gulp-mocha'),
-    path            = require('path'),
-    package         = require('../../package.json'),
+    gulp =          require('gulp'),
+    mocha =         require('gulp-mocha'),
+    path =          require('path'),
 
-    { paths }       = require('../config'),
-    { ENV_DEV }     = require('../envs')
-    
-    wdio            = new Launcher(paths.webdriver.config),
-    
-gulp.task('test',() => {
-    return wdio.run(code => {
-        process.exit(code);
-      }, error => {
-        console.error('Launcher failed to start the test', error.stacktrace);
-        process.exit(1);
-      });
-});
+    { paths } =     require('../config'),
+    { ENV_DEV } =   require('../envs'),
 
-gulp.task('report',() => {
-    let config = require(path.join(paths.test.output,paths.test.reportFile))
-    return marge.create(config,{
-        reportDir : paths.test.output
-    });
-});
+    mochaLocalConfig = {
+        reporter: 'mochawesome',
+        reporterOptions: {
+            reportDir: paths.test.output,
+            reportFilename: paths.test.reportFile,
+            autoOpen: true
+        }
+    }
 
-module.exports = gulp.task('e2e',(callback) => {
-    gulpSequence('test','report')(callback);
+module.exports = gulp.task('test', () => {
+    return gulp.src(paths.test.src)
+        .pipe(mocha(ENV_DEV && mochaLocalConfig))
+        .once('error', () => {
+			process.exit(1);
+		})
+		.once('end', () => {
+			process.exit();
+		});
 });

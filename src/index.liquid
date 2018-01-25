@@ -14,7 +14,7 @@
 
 <script>
     $(document).ready(function () {        
-        $('#content').load('http://localhost:8080/ec-datapluginloader.html', function( response, status, xhr ) {
+        $('#content').load('ec-datapluginloader.html', function( response, status, xhr ) {
             if ( status == "error" ) console.warn("ec-datapluginloader.html: " + xhr.status + " " + xhr.statusText);
              loadScriptsAndWidgets({
                 "cdnUrl" : "https://cdn.euroconsumers.org",
