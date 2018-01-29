@@ -53,9 +53,6 @@ module.exports = {
         },
         readme : {
             src: path.join(rootDir,'README.md')
-        },
-        webdriver : {
-            config : path.join(rootDir,'config','wdio.conf.js')
         }
     }
 }
