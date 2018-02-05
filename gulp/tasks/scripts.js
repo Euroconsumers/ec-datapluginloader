@@ -4,20 +4,21 @@ const
     browserify      = require('browserify'),
     browserSync     = require('browser-sync').create(),
     buffer          = require('vinyl-buffer'),
+    eslint          = require('gulp-eslint'),
     gulp            = require('gulp'),
     gulpIf          = require('gulp-if'),
     gutil           = require('gulp-util'),
     gulpRename      = require('gulp-rename'),
     gulpUglify      = require('gulp-uglify'),
     gulpStripDebug  = require('gulp-strip-debug'),
+    jsdoc           = require('gulp-jsdoc3'),
     path            = require('path'),
+    polyfiller      = require('gulp-polyfiller'),
     source          = require('vinyl-source-stream'),
     sourcemaps      = require('gulp-sourcemaps'),
-    polyfiller      = require('gulp-polyfiller'),
-    jsdoc           = require('gulp-jsdoc3'),
     
     { paths, pkgname }       = require('../config'),
-    { ENV_DEV } = require('../envs')
+    { ENV_DEV } = require('../envs');
 
 gulp.task('source-scripts', () => {
     return browserify({
@@ -47,4 +48,10 @@ gulp.task('jsdoc', () =>{
     .pipe(jsdoc(config));
 })
 
+gulp.task('lint',() =>{
+    return gulp.src([paths.js.entry])
+        .pipe(eslint())
+        .pipe(eslint.format())
+        .pipe(eslint.failAfterError());
+});
 module.exports = gulp.task('scripts', ['source-scripts','jsdoc'])
