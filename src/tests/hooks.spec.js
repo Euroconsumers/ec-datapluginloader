@@ -2,7 +2,6 @@ let
     selenium = require('selenium-webdriver');
 
 beforeEach(function () {
-    console.log(this.currentTest.parent.fullTitle())
     driver = new selenium.Builder()
         .withCapabilities({
             'browserName': 'chrome',
