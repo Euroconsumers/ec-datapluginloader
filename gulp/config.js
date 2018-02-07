@@ -48,7 +48,7 @@ module.exports = {
             reportFile: 'report.json'
         },
         jsdoc : {
-            config: path.join(rootDir,'config','jsdoc.json'),
+            config: path.join(rootDir,'jsdoc.json'),
             dst: path.join(rootDir,'_doc' )
         },
         readme : {

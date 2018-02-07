@@ -4,6 +4,7 @@
   "description": "Dynamically loads missing plugins and dependencies.",
   "main": "index.js",
   "scripts": {
+    "prestart": "npm install",
     "start": "gulp build --dev",
     "build": "gulp build",
     "test": "gulp test",

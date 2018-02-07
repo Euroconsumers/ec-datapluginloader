@@ -1,18 +1,19 @@
-let
-    selenium = require('selenium-webdriver');
+const
+    selenium = require('selenium-webdriver'),
+    { name,version } = require('../../package.json')
 
 beforeEach(function () {
     driver = new selenium.Builder()
         .withCapabilities({
             'browserName': 'chrome',
-            'username': 'sso-euroconsumers-RDesaegher',
-            'accessKey': '2b72fd85-6d51-4d86-a49b-9ca53e21bb12',
-            'name': `ec-datapluginloader - ${this.currentTest.parent.fullTitle()} - ${this.currentTest.title}`,
-            'tags': ['widget', 'critical'],
-            'build': '1.0.0',
-            'tunnelIdentifier': 'Raphael\'s Tunnel' //Tunnel name to be used 
+            'username': process.env.SAUCE_USERNAME,
+            'accessKey': process.env.SAUCE_ACCESS_KEY,
+            'name': `${name} - ${this.currentTest.parent.fullTitle()} - ${this.currentTest.title}`,
+            'tags': ['widget'],
+            'build': version,
+            'tunnelIdentifier': `${process.env.SAUCE_USERNAME}\'s Tunnel` //Tunnel name to be used 
         })
-        .usingServer('http://sso-euroconsumers-RDesaegher:2b72fd85-6d51-4d86-a49b-9ca53e21bb12@ondemand.saucelabs.com:80/wd/hub')
+        .usingServer(`https://${process.env.SAUCE_USERNAME}:${process.env.SAUCE_ACCESS_KEY}@ondemand.saucelabs.com:443/wd/hub`)
         .build();
 });
 
