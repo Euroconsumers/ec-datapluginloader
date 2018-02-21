@@ -1,4 +1,3 @@
-require('babel-register');
 require('jsdom-global')('',{
     url: 'https://example.org/'
 });

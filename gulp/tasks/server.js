@@ -1,16 +1,14 @@
 const
-    browserSync     = require('browser-sync').create(),
-    gulp            = require('gulp'),
-    path            = require('path'),
+    browserSync         = require('browser-sync').create(),
+    gulp                = require('gulp'),
 
-    { paths }       = require('../config'),
-    { name }        = require('../../package.json')
+    { paths,pkgname }   = require('../config');
 
 module.exports = gulp.task('server', () => {
     browserSync.init({
         server: {
             baseDir: paths.dstDir,
-            index: `${name}.html`,
+            index: `${pkgname}.html`,
             serveStaticOptions: {
                 extensions: ['html']
             },

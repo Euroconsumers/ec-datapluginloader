@@ -1,4 +1,10 @@
 {
-    "presets": ["env"],
-    "plugins": ["transform-runtime", "transform-async-to-generator"]
+    "presets": [
+        ["env", {
+            "targets" : {
+                "browsers" : [">4%", "last 2 chrome version", "last 1 firefox version", "last 1 edge version", "last 1 safari version", "last 1 chromeAndroid version", "last 1 ios version", "ie 11"]
+            },
+            "modules":false
+        }]
+    ]
 }

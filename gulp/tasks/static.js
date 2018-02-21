@@ -15,4 +15,10 @@ gulp.task('json', () => {
         .pipe(gulp.dest(paths.json.dst))
 })
 
-module.exports = gulp.task('static', ['html', 'json'])
+gulp.task('babel-polyfill', () => {
+    console.log(paths.dstDir);
+    return gulp.src('node_modules/babel-polyfill/dist/polyfill.min.js')
+    .pipe(gulp.dest(paths.dstDir))
+})
+
+module.exports = gulp.task('static', ['html', 'json','babel-polyfill'])

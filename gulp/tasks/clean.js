@@ -1,11 +1,13 @@
 const
-        gulp        = require('gulp'),
-        clean       = require('gulp-clean'),
+    del         = require('del'),
+    gulp        = require('gulp'),
+    { paths }   = require('../config');
 
-        { paths } = require('../config')
-
-module.exports = gulp.task('clean', () => {
-    return gulp.src([paths.dstDir,paths.test.output,paths.jsdoc.dst], { read: false })
-        .pipe(clean({ force: true }))
-})
+gulp.task('clean', () => {
+    return del([
+        paths.dstDir,
+        paths.test.output,
+        paths.jsdoc.dst
+    ]);
+});
 

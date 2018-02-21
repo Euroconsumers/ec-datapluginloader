@@ -1,4 +1,5 @@
 const
+    babel = require('gulp-babel'),
     gulp = require('gulp'),
     gulpSequence = require('gulp-sequence'),
     mocha = require('gulp-mocha'),
@@ -23,9 +24,9 @@ const
         globals: ['driver']
     }
 
-let stream,
-    port = 8080//Math.floor(Math.random() * (65000 - 1337 + 1) + 1337);
-
+let 
+    stream,
+    port = 8080;
 const isPortTaken = function (port, fn) {
     var net = require('net')
     var tester = net.createServer()

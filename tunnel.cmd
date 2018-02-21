@@ -1,5 +1,5 @@
 @echo off
-if "%SAUCE_USERNAME%"=="sso-euroconsumers-RDesaegher" GOTO :username-missing
+if "%SAUCE_USERNAME%"=="" GOTO :username-missing
 if "%SAUCE_ACCESS_KEY%"=="" GOTO :access-key-missing
 bin\sauceconnect  -u %SAUCE_USERNAME% -k %SAUCE_ACCESS_KEY% --proxy-tunnel  --no-autodetect -i "%SAUCE_USERNAME%'s Tunnel"
 GOTO :eof
