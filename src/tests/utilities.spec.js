@@ -1,3 +1,8 @@
+require('babel-register')({
+    presets:[['env',{
+        module:true
+    }]]
+});
 require('jsdom-global')('',{
     url: 'https://example.org/'
 });

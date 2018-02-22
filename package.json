@@ -36,7 +36,6 @@
     "chai": "^4.1.1",
     "chai-as-promised": "^7.1.1",
     "chai-webdriver": "^1.2.0",
-    "chromedriver": "^2.35.0",
     "docdash": "^0.4.0",
     "gulp": "^3.9.1",
     "gulp-autoprefixer": "^4.0.0",
@@ -57,16 +56,12 @@
     "gulp-util": "^3.0.8",
     "gulp-webserver": "^0.9.1",
     "ip": "^1.1.5",
-    "jsdom": "11.5.1",
+    "jsdom": "^11.6.2",
     "jsdom-global": "3.0.2",
     "mochawesome": "^2.3.0",
     "path": "^0.12.7",
-    "portfinder": "^1.0.13",
     "sass-module-importer": "^1.4.0",
-    "saucelabs": "^1.4.0",
-    "selenium-webdriver": "^3.5.0",
-    "vinyl-buffer": "^1.0.0",
-    "vinyl-source-stream": "^1.1.0"
+    "selenium-webdriver": "^3.5.0"
   },
   "dependencies": {}
 }

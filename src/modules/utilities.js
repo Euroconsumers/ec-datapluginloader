@@ -59,6 +59,7 @@ export function getFileExtension(path) {
 * @param {script} url - The url in which we will exclude the hostname
 * @function getDomainName
 * @return {string} - The domain name 
+* @memberof module:ec-script-loader
 */
 export function getDomainName(url) {
     //This is only to handle the file that might be added to the DOM by an extension. Other exception might appear in the future.

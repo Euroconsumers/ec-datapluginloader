@@ -41,7 +41,7 @@ gulp.task('jsdoc', () =>{
     let config = require(paths.jsdoc.config);
     config.opts.destination = paths.jsdoc.dst;
 
-    gulp.src([paths.js.entry,paths.readme.src],{read: false})
+    gulp.src([paths.js.entry,paths.js.modules,paths.readme.src],{read: false})
     .pipe(jsdoc(config));
 
 });
