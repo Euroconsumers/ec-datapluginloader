@@ -1,31 +1,35 @@
 const
     babel               = require('gulp-babel'),
     browserSync         = require('browser-sync').create(),
+    buffer              = require('vinyl-buffer'),
     eslint              = require('gulp-eslint'),
     gulp                = require('gulp'),
     gulpIf              = require('gulp-if'),
-    util                = require('gulp-util'),
-    rename              = require('gulp-rename'),
-    rollup              = require('gulp-rollup'),
-    uglify              = require('gulp-uglify'),
-    stripDebug          = require('gulp-strip-debug'),
     jsdoc               = require('gulp-jsdoc3'),
     path                = require('path'),
+    rename              = require('gulp-rename'),
+    rollup              = require('rollup-stream'),
+    rollupResolve       = require('rollup-plugin-node-resolve'),
+    source              = require('vinyl-source-stream')
     sourcemaps          = require('gulp-sourcemaps'),
+    stripDebug          = require('gulp-strip-debug'),
+    uglify              = require('gulp-uglify'),
+    util                = require('gulp-util'),
     
     { paths, pkgname }  = require('../config'),
     { ENV_DEV }         = require('../envs');
 
 gulp.task('source-scripts', () => {
-    return gulp.src([path.join(paths.js.entry),path.join(paths.js.modules)])
+    
+    return rollup({
+        format:'iife',
+        input: paths.js.entry,
+        sourcemap:true
+    })
+    .pipe(source(`${pkgname}.js`))
+    .pipe(buffer())
     .pipe(gulpIf(ENV_DEV, sourcemaps.init({ loadMaps: true})))
     .pipe(babel())
-    .pipe(rollup({
-        output: {
-            format:'iife'
-        },
-        input: path.join(paths.js.entry)
-    }))
     .pipe(uglify().on('error', util.log))
     .pipe(gulpIf(!ENV_DEV, stripDebug()))
     .pipe(gulpIf(!ENV_DEV, rename((path) => {

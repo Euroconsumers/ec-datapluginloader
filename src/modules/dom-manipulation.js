@@ -15,8 +15,7 @@ export function getStyle(url, canFail) {
         link.type = 'text/css';
         link.href = url;
         link.media = 'all';
-        head.appendChild(link);
-        link.onload = function () {
+       link.onload = function () {
             resolve();
         }
         link.onerror = function (err) {
@@ -28,6 +27,7 @@ export function getStyle(url, canFail) {
                 reject(err);
             }
         }
+        head.appendChild(link);
     });
 }
 

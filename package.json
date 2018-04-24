@@ -60,8 +60,15 @@
     "jsdom-global": "3.0.2",
     "mochawesome": "^2.3.0",
     "path": "^0.12.7",
+    "rollup-stream": "^1.24.1",
     "sass-module-importer": "^1.4.0",
-    "selenium-webdriver": "^3.5.0"
+    "selenium-webdriver": "^3.5.0",
+    "vinyl-source-stream": "^2.0.0",
+    "whatwg-fetch": "^2.0.3"
   },
-  "dependencies": {}
+  "dependencies": {
+    "rollup-plugin-babel": "^3.0.3",
+    "rollup-plugin-node-resolve": "^3.0.3",
+    "vinyl-buffer": "^1.0.1"
+  }
 }

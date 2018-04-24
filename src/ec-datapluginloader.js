@@ -4,10 +4,10 @@
  * @author Raphaël Desaegher (belux\rds) <rdesaegher@test-achats.be>
  * @license LGPL-3.0
  */
-
+import '../node_modules/whatwg-fetch/fetch';
 import { getLibraryName, getVersionNumber, getFileExtension, getDomainName, changeUrlHostname } from './modules/utilities';
 import { getAlreadyLoadedScripts, getScript, getStyle } from './modules/dom-manipulation'
-import { jqPreload } from './modules/jquery-preload';
+//import { jqPreload } from './modules/jquery-preload';
 
 'use strict';
 
@@ -25,7 +25,7 @@ let jQueryPromise,
     styles = [],
     _options;
 
-jQueryPromise = jqPreload(window, document, jQueryPath);
+jQueryPromise = Promise.resolve()//jqPreload(window, document, jQueryPath); //Disable the load of Jquery via the widget loader.
     
 window.loadScriptsAndWidgets = async (options) => {
     options.cdnUrl = options.cdnUrl || 'https://cdn.euroconsumers.org';
